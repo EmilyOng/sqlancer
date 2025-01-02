@@ -13,6 +13,7 @@ import sqlancer.mysql.gen.MySQLExpressionGenerator;
 import sqlancer.mysql.oracle.MySQLDQPOracle;
 import sqlancer.mysql.oracle.MySQLFuzzer;
 import sqlancer.mysql.oracle.MySQLPivotedQuerySynthesisOracle;
+import sqlancer.mysql.oracle.MySQLReferenceEngineOracle;
 
 public enum MySQLOracleFactory implements OracleFactory<MySQLGlobalState> {
 
@@ -79,8 +80,7 @@ public enum MySQLOracleFactory implements OracleFactory<MySQLGlobalState> {
     REFERENCE_ENGINE {
         @Override
         public TestOracle<MySQLGlobalState> create(MySQLGlobalState globalState) throws Exception {
-            // TODO(EmilyOng): Implement reference engine oracle.
-            return null;
+            return new MySQLReferenceEngineOracle(globalState);
         }
     };
 }

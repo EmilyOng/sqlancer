@@ -65,6 +65,13 @@ public class MySQLExpressionGenerator extends UntypedExpressionGenerator<MySQLEx
     private enum Actions {
         COLUMN, LITERAL, UNARY_PREFIX_OPERATION, UNARY_POSTFIX, COMPUTABLE_FUNCTION, BINARY_LOGICAL_OPERATOR,
         BINARY_COMPARISON_OPERATION, CAST, IN_OPERATION, BINARY_OPERATION, EXISTS, BETWEEN_OPERATOR;
+
+        public static Actions[] valuesReferenceEngine() {
+            return new Actions[] {
+                COLUMN, LITERAL, UNARY_PREFIX_OPERATION, UNARY_POSTFIX, BINARY_LOGICAL_OPERATOR,
+                BINARY_COMPARISON_OPERATION
+            };
+        }
     }
 
     @Override
@@ -72,7 +79,12 @@ public class MySQLExpressionGenerator extends UntypedExpressionGenerator<MySQLEx
         if (depth >= state.getOptions().getMaxExpressionDepth()) {
             return generateLeafNode();
         }
-        switch (Randomly.fromOptions(Actions.values())) {
+
+        Actions[] values = state.usesReferenceEngine()
+            ? Actions.valuesReferenceEngine()
+            : Actions.values();
+
+        switch (Randomly.fromOptions(values)) {
         case COLUMN:
             return generateColumn();
         case LITERAL:
@@ -89,10 +101,10 @@ public class MySQLExpressionGenerator extends UntypedExpressionGenerator<MySQLEx
             return getComputableFunction(depth + 1);
         case BINARY_LOGICAL_OPERATOR:
             return new MySQLBinaryLogicalOperation(generateExpression(depth + 1), generateExpression(depth + 1),
-                    MySQLBinaryLogicalOperator.getRandom());
+                    MySQLBinaryLogicalOperator.getRandom(state));
         case BINARY_COMPARISON_OPERATION:
             return new MySQLBinaryComparisonOperation(generateExpression(depth + 1), generateExpression(depth + 1),
-                    BinaryComparisonOperator.getRandom());
+                    BinaryComparisonOperator.getRandom(state));
         case CAST:
             return new MySQLCastOperation(generateExpression(depth + 1), MySQLCastOperation.CastType.getRandom());
         case IN_OPERATION:

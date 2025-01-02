@@ -46,7 +46,7 @@ public final class MySQLRandomQuerySynthesizer {
         if (Randomly.getBoolean()) {
             select.setWhereClause(gen.generateExpression());
         }
-        if (Randomly.getBooleanWithRatherLowProbability()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBooleanWithRatherLowProbability()) {
             select.setOrderByClauses(gen.generateOrderBys());
         }
         if (hasGeneratedAggregate || Randomly.getBoolean()) {
@@ -57,7 +57,7 @@ public final class MySQLRandomQuerySynthesizer {
         }
         if (Randomly.getBoolean()) {
             select.setLimitClause(MySQLConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
-            if (Randomly.getBoolean()) {
+            if (!globalState.usesReferenceEngine() && Randomly.getBoolean()) {
                 select.setOffsetClause(MySQLConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             }
         }

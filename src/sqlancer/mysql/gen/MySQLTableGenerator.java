@@ -67,7 +67,9 @@ public class MySQLTableGenerator {
             }
             sb.append(")");
             sb.append(" ");
-            appendTableOptions();
+            if (!globalState.usesReferenceEngine()) {
+                appendTableOptions();
+            }
             appendPartitionOptions();
             if (engine == MySQLEngine.CSV && (tableHasNullableColumn || setPrimaryKey)) {
                 if (true) { // TODO
@@ -333,7 +335,10 @@ public class MySQLTableGenerator {
             optionallyAddPrecisionAndScale(sb);
             break;
         case INT:
-            sb.append(Randomly.fromOptions("TINYINT", "SMALLINT", "MEDIUMINT", "INT", "BIGINT"));
+            String intType = globalState.usesReferenceEngine()
+                ? Randomly.fromOptions("INT", "BIGINT")
+                : Randomly.fromOptions("TINYINT", "SMALLINT", "MEDIUMINT", "INT", "BIGINT");
+            sb.append(intType);
             if (Randomly.getBoolean()) {
                 sb.append("(");
                 sb.append(Randomly.getNotCachedInteger(0, 255)); // Display width out of range for column 'c0' (max =

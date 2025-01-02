@@ -31,7 +31,7 @@ public class MySQLInsertGenerator {
     }
 
     public static SQLQueryAdapter insertRow(MySQLGlobalState globalState, MySQLTable table) throws SQLException {
-        if (Randomly.getBoolean()) {
+        if (globalState.usesReferenceEngine() || Randomly.getBoolean()) {
             return new MySQLInsertGenerator(globalState, table).generateInsert();
         } else {
             return new MySQLInsertGenerator(globalState, table).generateReplace();

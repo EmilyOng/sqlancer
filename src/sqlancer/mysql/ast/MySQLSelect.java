@@ -19,6 +19,10 @@ public class MySQLSelect extends SelectBase<MySQLExpression>
 
     public enum SelectType {
         DISTINCT, ALL, DISTINCTROW;
+
+        public static SelectType[] valuesReferenceEngine() {
+            return new SelectType[] { DISTINCT, ALL };
+        }
     }
 
     public void setSelectType(SelectType fromOptions) {

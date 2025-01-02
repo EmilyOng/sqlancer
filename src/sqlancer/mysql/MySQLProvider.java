@@ -76,6 +76,10 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
         public SQLQueryAdapter getQuery(MySQLGlobalState globalState) throws Exception {
             return sqlQueryProvider.getQuery(globalState);
         }
+
+        public static Action[] valuesReferenceEngine() {
+            return new Action[] { INSERT };
+        }
     }
 
     private static int mapActions(MySQLGlobalState globalState, Action a) {
@@ -145,7 +149,10 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
             globalState.executeStatement(createTable);
         }
 
-        StatementExecutor<MySQLGlobalState, Action> se = new StatementExecutor<>(globalState, Action.values(),
+        Action[] values = globalState.usesReferenceEngine()
+            ? Action.valuesReferenceEngine()
+            : Action.values();
+        StatementExecutor<MySQLGlobalState, Action> se = new StatementExecutor<>(globalState, values,
                 MySQLProvider::mapActions, (q) -> {
                     if (globalState.getSchema().getDatabaseTables().isEmpty()) {
                         throw new IgnoreMeException();
