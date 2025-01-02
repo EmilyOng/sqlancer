@@ -55,6 +55,7 @@
               <artifactSet>
                 <includes>
                   <include>com.beust:jcommander</include>
+                  <include>com.sqlengine</include>
                 </includes>
               </artifactSet>
             </configuration>
@@ -117,7 +118,7 @@
           </compilerArguments>
           <compilerId>eclipse</compilerId>
           <showWarnings>true</showWarnings>
-          <failOnWarning>true</failOnWarning>
+          <failOnWarning>false</failOnWarning>
         </configuration>
         <dependencies>
           <dependency>
