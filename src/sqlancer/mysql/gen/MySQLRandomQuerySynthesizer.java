@@ -23,7 +23,11 @@ public final class MySQLRandomQuerySynthesizer {
         MySQLSelect select = new MySQLSelect();
         List<MySQLExpression> columns = new ArrayList<>();
 
-        select.setSelectType(Randomly.fromOptions(MySQLSelect.SelectType.values()));
+        select.setSelectType(
+            globalState.usesReferenceEngine()
+                ? Randomly.fromOptions(MySQLSelect.SelectType.valuesReferenceEngine())
+                : Randomly.fromOptions(MySQLSelect.SelectType.values())
+        );
         columns.addAll(gen.generateExpressions(nrColumns));
         select.setFetchColumns(columns);
         List<MySQLExpression> tableList = tables.getTables().stream().map(t -> new MySQLTableReference(t))
@@ -32,7 +36,7 @@ public final class MySQLRandomQuerySynthesizer {
         if (Randomly.getBoolean()) {
             select.setWhereClause(gen.generateExpression());
         }
-        if (Randomly.getBooleanWithRatherLowProbability()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBooleanWithRatherLowProbability()) {
             select.setOrderByClauses(gen.generateOrderBys());
         }
         if (Randomly.getBoolean()) {
@@ -43,7 +47,7 @@ public final class MySQLRandomQuerySynthesizer {
         }
         if (Randomly.getBoolean()) {
             select.setLimitClause(MySQLConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
-            if (Randomly.getBoolean()) {
+            if (!globalState.usesReferenceEngine() && Randomly.getBoolean()) {
                 select.setOffsetClause(MySQLConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
             }
         }

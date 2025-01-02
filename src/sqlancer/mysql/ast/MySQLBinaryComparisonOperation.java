@@ -2,6 +2,7 @@ package sqlancer.mysql.ast;
 
 import sqlancer.LikeImplementationHelper;
 import sqlancer.Randomly;
+import sqlancer.mysql.MySQLGlobalState;
 import sqlancer.mysql.MySQLSchema.MySQLDataType;
 import sqlancer.mysql.ast.MySQLUnaryPrefixOperation.MySQLUnaryPrefixOperator;
 
@@ -114,7 +115,10 @@ public class MySQLBinaryComparisonOperation implements MySQLExpression {
 
         public abstract MySQLConstant getExpectedValue(MySQLConstant leftVal, MySQLConstant rightVal);
 
-        public static BinaryComparisonOperator getRandom() {
+        public static BinaryComparisonOperator getRandom(MySQLGlobalState globalState) {
+            if (globalState.usesReferenceEngine()) {
+                return Randomly.fromOptions(EQUALS, NOT_EQUALS, LESS, LESS_EQUALS, GREATER, GREATER_EQUALS);
+            }
             return Randomly.fromOptions(BinaryComparisonOperator.values());
         }
     }

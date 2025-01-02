@@ -1,6 +1,7 @@
 package sqlancer.mysql.ast;
 
 import sqlancer.Randomly;
+import sqlancer.mysql.MySQLGlobalState;
 
 public class MySQLBinaryLogicalOperation implements MySQLExpression {
 
@@ -69,7 +70,10 @@ public class MySQLBinaryLogicalOperation implements MySQLExpression {
 
         public abstract MySQLConstant apply(MySQLConstant left, MySQLConstant right);
 
-        public static MySQLBinaryLogicalOperator getRandom() {
+        public static MySQLBinaryLogicalOperator getRandom(MySQLGlobalState globalState) {
+            if (globalState.usesReferenceEngine()) {
+                return Randomly.fromOptions(AND, OR);
+            }
             return Randomly.fromOptions(values());
         }
     }
