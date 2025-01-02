@@ -16,4 +16,8 @@ public class MySQLGlobalState extends SQLGlobalState<MySQLOptions, MySQLSchema> 
         return getDbmsSpecificOptions().oracles.stream().anyMatch(o -> o == MySQLOracleFactory.PQS);
     }
 
+    public boolean usesReferenceEngine() {
+        return getDbmsSpecificOptions().oracles.stream().anyMatch(o -> o == MySQLOracleFactory.REFERENCE_ENGINE);
+    }
+
 }

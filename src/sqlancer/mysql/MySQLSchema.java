@@ -32,6 +32,8 @@ public class MySQLSchema extends AbstractSchema<MySQLGlobalState, MySQLTable> {
         public static MySQLDataType getRandom(MySQLGlobalState globalState) {
             if (globalState.usesPQS()) {
                 return Randomly.fromOptions(MySQLDataType.INT, MySQLDataType.VARCHAR);
+            } else if (globalState.usesReferenceEngine()) {
+                return Randomly.fromOptions(MySQLDataType.INT);
             } else {
                 return Randomly.fromOptions(values());
             }

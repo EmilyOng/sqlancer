@@ -75,5 +75,12 @@ public enum MySQLOracleFactory implements OracleFactory<MySQLGlobalState> {
         public TestOracle<MySQLGlobalState> create(MySQLGlobalState globalState) throws SQLException {
             return new MySQLDQPOracle(globalState);
         }
+    },
+    REFERENCE_ENGINE {
+        @Override
+        public TestOracle<MySQLGlobalState> create(MySQLGlobalState globalState) throws Exception {
+            // TODO(EmilyOng): Implement reference engine oracle.
+            return null;
+        }
     };
 }

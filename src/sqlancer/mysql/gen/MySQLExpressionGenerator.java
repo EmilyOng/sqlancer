@@ -146,16 +146,20 @@ public class MySQLExpressionGenerator extends UntypedExpressionGenerator<MySQLEx
         public static ConstantType[] valuesPQS() {
             return new ConstantType[] { INT, NULL, STRING };
         }
+
+        public static ConstantType[] valuesReferenceEngine() {
+            return new ConstantType[] { INT, NULL };
+        }
     }
 
     @Override
     public MySQLExpression generateConstant() {
-        ConstantType[] values;
-        if (state.usesPQS()) {
-            values = ConstantType.valuesPQS();
-        } else {
-            values = ConstantType.values();
-        }
+        ConstantType[] values = state.usesPQS()
+            ? ConstantType.valuesPQS()
+            : state.usesReferenceEngine()
+            ? ConstantType.valuesReferenceEngine()
+            : ConstantType.values();
+
         switch (Randomly.fromOptions(values)) {
         case INT:
             return MySQLConstant.createIntConstant((int) state.getRandomly().getInteger());
