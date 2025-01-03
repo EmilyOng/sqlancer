@@ -76,8 +76,13 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
             Table resultTable = executor.execute(statements.toString());
             List<String> firstColResultSet = new ArrayList<>();
             for (Iterator<Row> rowsIterator = resultTable.getTableRows(); rowsIterator.hasNext();) {
-                Row row = rowsIterator.next();
-                firstColResultSet.add(row.at(0).getValue().getStringValue());
+                String result = rowsIterator.next().at(0).getValue().getStringValue();
+                if (result.equalsIgnoreCase("null")) {
+                    // SQLancer treats "null" result values as literal nulls.
+                    firstColResultSet.add(null);
+                } else {
+                    firstColResultSet.add(result);
+                }
             }
 
             return new ExecutionResult(null, firstColResultSet);
