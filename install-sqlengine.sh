@@ -1,4 +1,5 @@
 cd sqlengine
+git pull
 mvn package -DskipTests
 cd ../
 mvn install:install-file \
@@ -6,3 +7,4 @@ mvn install:install-file \
     -DgroupId=com.sqlengine \
     -DartifactId=sqlengine \
     -Dversion=1.0-SNAPSHOT
+mvn package -DskipTests
