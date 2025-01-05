@@ -267,7 +267,7 @@ public class MySQLTableGenerator {
         if (!columnOptions.contains(ColumnOptions.NULL_OR_NOT_NULL)) {
             tableHasNullableColumn = true;
         }
-        if (isTextType) {
+        if (globalState.usesReferenceEngine() || isTextType) {
             // TODO: restriction due to the limited key length
             columnOptions.remove(ColumnOptions.PRIMARY_KEY);
             columnOptions.remove(ColumnOptions.UNIQUE);

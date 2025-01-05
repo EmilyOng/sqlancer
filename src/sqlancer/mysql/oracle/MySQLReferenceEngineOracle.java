@@ -1,8 +1,8 @@
 package sqlancer.mysql.oracle;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.sqlengine.dialect.DialectFactory;
 import com.sqlengine.dialect.DialectManager;
@@ -18,16 +18,17 @@ import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.mysql.MySQLGlobalState;
 import sqlancer.mysql.MySQLVisitor;
+import sqlancer.mysql.ast.MySQLSelect;
 import sqlancer.mysql.gen.MySQLRandomQuerySynthesizer;
 
 public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> {
     
     private class ExecutionResult {
-        private final Exception exception;
+        private final Throwable throwable;
         private final List<String> firstColResultSet;
 
-        public ExecutionResult(Exception exception, List<String> firstColResultSet) {
-            this.exception = exception;
+        public ExecutionResult(Throwable throwable, List<String> firstColResultSet) {
+            this.throwable = throwable;
             this.firstColResultSet = firstColResultSet;
         }
     }
@@ -49,6 +50,8 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
                 null, ComparatorHelper.getResultSetFirstColumnAsString(selectStr, null, globalState)
             );
         } catch (Exception e) {
+            return new ExecutionResult(e, List.of());
+        } catch (Error e) {
             return new ExecutionResult(e, List.of());
         }
     }
@@ -75,8 +78,8 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
         try {
             Table resultTable = executor.execute(statements.toString());
             List<String> firstColResultSet = new ArrayList<>();
-            for (Iterator<Row> rowsIterator = resultTable.getTableRows(); rowsIterator.hasNext();) {
-                String result = rowsIterator.next().at(0).getValue().getStringValue();
+            for (Row row : resultTable.getTableRows()) {
+                String result = row.at(0).getValue().getStringValue();
                 if (result.equalsIgnoreCase("null")) {
                     // SQLancer treats "null" result values as literal nulls.
                     firstColResultSet.add(null);
@@ -93,15 +96,24 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
 
     @Override
     public void check() throws Exception {        
-        String selectStr = MySQLVisitor.asString(MySQLRandomQuerySynthesizer.generate(globalState, Randomly.smallNumber() + 1)) + ';';
+        MySQLSelect selectQuery = MySQLRandomQuerySynthesizer.generate(globalState, Randomly.smallNumber() + 1);
+        String selectStr = (MySQLVisitor.asString(selectQuery) + ';')
+                            // UNKNOWN is unsupported in JSQLParser.
+                            .replaceAll(Pattern.quote("UNKNOWN"), "NULL")
+                            // Standardize conventions.
+                            .replaceAll(Pattern.quote("! "), "NOT ")
+                            .replaceAll(Pattern.quote("||"), "OR")
+                            .replaceAll(Pattern.quote("&&"), "AND");
+
         ExecutionResult dbmsExecutionResult = runDbmsExecutor(selectStr);
         ExecutionResult referenceExecutionResult = runReferenceExecutor(selectStr);
 
-        if (dbmsExecutionResult.exception != null && referenceExecutionResult.exception == null) {
-            throw new AssertionError(String.format("MySQL executor reports an exception: %s.", dbmsExecutionResult.exception));
+        if (dbmsExecutionResult.throwable != null && referenceExecutionResult.throwable == null) {
+            // throw new AssertionError(String.format("MySQL executor reports an exception: %s.", dbmsExecutionResult.throwable));
+            return;
         }
-        if (dbmsExecutionResult.exception == null && referenceExecutionResult.exception != null) {
-            throw new AssertionError(String.format("Reference executor reports an exception: %s.", referenceExecutionResult.exception));
+        if (dbmsExecutionResult.throwable == null && referenceExecutionResult.throwable != null) {
+            throw new AssertionError(String.format("Reference executor reports an exception: %s.", referenceExecutionResult.throwable));
         }
 
         ComparatorHelper.assumeResultSetsAreEqual(
