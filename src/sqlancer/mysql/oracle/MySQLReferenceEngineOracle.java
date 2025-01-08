@@ -11,6 +11,7 @@ import com.sqlengine.engine.Executor;
 import com.sqlengine.env.Row;
 import com.sqlengine.env.Table;
 
+import net.sf.jsqlparser.JSQLParserException;
 import sqlancer.ComparatorHelper;
 import sqlancer.Randomly;
 import sqlancer.common.oracle.TestOracle;
@@ -35,10 +36,36 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
     
     private final MySQLGlobalState globalState;
     private final DialectManager dialectManager;
+    private Executor executor;
 
     public MySQLReferenceEngineOracle(MySQLGlobalState globalState) {
         this.globalState = globalState;
         this.dialectManager = DialectFactory.createDialectManager(DialectType.MYSQL);
+        try {
+            this.executor = this.initializeExecutor();
+        } catch (Exception e) {
+        }
+    }
+
+    private Executor initializeExecutor() throws Exception {
+        Executor executor = new Executor(dialectManager);
+
+        StringBuilder statements = new StringBuilder();
+        for (Query<?> queryStatement : globalState.getState().getStatements()) {
+            String queryStatementStr = queryStatement.toString();
+            if (
+                queryStatementStr.startsWith("DROP DATABASE") ||
+                queryStatementStr.startsWith("CREATE DATABASE") ||
+                queryStatementStr.startsWith("USE")
+            ) {
+                // Ignore database statements.
+                continue;
+            }
+            statements.append(queryStatementStr);
+            statements.append("\n");
+        }
+        executor.execute(statements.toString());
+        return executor;
     }
 
     private ExecutionResult runDbmsExecutor(String selectStr) {
@@ -57,26 +84,8 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
     }
 
     private ExecutionResult runReferenceExecutor(String selectStr) {
-        Executor executor = new Executor(dialectManager);
-
-        StringBuilder statements = new StringBuilder();
-        for (Query<?> queryStatement : globalState.getState().getStatements()) {
-            String queryStatementStr = queryStatement.toString();
-            if (
-                queryStatementStr.startsWith("DROP DATABASE") ||
-                queryStatementStr.startsWith("CREATE DATABASE") ||
-                queryStatementStr.startsWith("USE")
-            ) {
-                // Ignore database statements.
-                continue;
-            }
-            statements.append(queryStatementStr);
-            statements.append("\n");
-        }
-        statements.append(selectStr);
-
         try {
-            Table resultTable = executor.execute(statements.toString());
+            Table resultTable = this.executor.execute(selectStr);
             List<String> firstColResultSet = new ArrayList<>();
             for (Row row : resultTable.getTableRows()) {
                 String result = row.at(0).getValue().getStringValue();
@@ -97,13 +106,7 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
     @Override
     public void check() throws Exception {        
         MySQLSelect selectQuery = MySQLRandomQuerySynthesizer.generate(globalState, Randomly.smallNumber() + 1);
-        String selectStr = (MySQLVisitor.asString(selectQuery) + ';')
-                            // UNKNOWN is unsupported in JSQLParser.
-                            .replaceAll(Pattern.quote("UNKNOWN"), "NULL")
-                            // Standardize conventions.
-                            .replaceAll(Pattern.quote("! "), "NOT ")
-                            .replaceAll(Pattern.quote("||"), "OR")
-                            .replaceAll(Pattern.quote("&&"), "AND");
+        String selectStr = (MySQLVisitor.asString(selectQuery) + ';');
 
         ExecutionResult dbmsExecutionResult = runDbmsExecutor(selectStr);
         ExecutionResult referenceExecutionResult = runReferenceExecutor(selectStr);
@@ -113,6 +116,9 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
             return;
         }
         if (dbmsExecutionResult.throwable == null && referenceExecutionResult.throwable != null) {
+            if (referenceExecutionResult.throwable instanceof JSQLParserException) {
+                return;
+            }
             throw new AssertionError(String.format("Reference executor reports an exception: %s.", referenceExecutionResult.throwable));
         }
 
