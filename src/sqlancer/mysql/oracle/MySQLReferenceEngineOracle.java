@@ -18,7 +18,6 @@ import sqlancer.common.oracle.TestOracle;
 import sqlancer.common.query.Query;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.mysql.MySQLGlobalState;
-import sqlancer.mysql.MySQLVisitor;
 import sqlancer.mysql.ast.MySQLSelect;
 import sqlancer.mysql.gen.MySQLRandomQuerySynthesizer;
 
@@ -106,7 +105,13 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
     @Override
     public void check() throws Exception {        
         MySQLSelect selectQuery = MySQLRandomQuerySynthesizer.generate(globalState, Randomly.smallNumber() + 1);
-        String selectStr = (MySQLVisitor.asString(selectQuery) + ';');
+        String selectStr = (selectQuery.asString() + ';')
+                            // UNKNOWN is unsupported in JSQLParser.
+                            .replaceAll(Pattern.quote("UNKNOWN"), "NULL")
+                            // Standardize conventions.
+                            .replaceAll(Pattern.quote("! "), "NOT ")
+                            .replaceAll(Pattern.quote("||"), "OR")
+                            .replaceAll(Pattern.quote("&&"), "AND");
 
         ExecutionResult dbmsExecutionResult = runDbmsExecutor(selectStr);
         ExecutionResult referenceExecutionResult = runReferenceExecutor(selectStr);
@@ -116,9 +121,6 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
             return;
         }
         if (dbmsExecutionResult.throwable == null && referenceExecutionResult.throwable != null) {
-            if (referenceExecutionResult.throwable instanceof JSQLParserException) {
-                return;
-            }
             throw new AssertionError(String.format("Reference executor reports an exception: %s.", referenceExecutionResult.throwable));
         }
 
