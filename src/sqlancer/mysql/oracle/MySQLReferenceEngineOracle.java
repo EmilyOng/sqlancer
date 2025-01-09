@@ -68,9 +68,7 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
 
     private ExecutionResult runDbmsExecutor(String selectStr) {
         try {
-            globalState.executeStatement(new SQLQueryAdapter(selectStr));
             globalState.getManager().incrementSelectQueryCount();
-
             return new ExecutionResult(
                 null, ComparatorHelper.getResultSetFirstColumnAsString(selectStr, null, globalState)
             );
