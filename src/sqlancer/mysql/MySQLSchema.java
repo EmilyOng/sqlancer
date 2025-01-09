@@ -58,6 +58,9 @@ public class MySQLSchema extends AbstractSchema<MySQLGlobalState, MySQLTable> {
     public static class MySQLColumn extends AbstractTableColumn<MySQLTable, MySQLDataType> {
 
         private final boolean isPrimaryKey;
+        private final boolean isUnique;
+        private final boolean isNotNull;
+
         private final int precision;
 
         public enum CollateSequence {
@@ -68,9 +71,18 @@ public class MySQLSchema extends AbstractSchema<MySQLGlobalState, MySQLTable> {
             }
         }
 
-        public MySQLColumn(String name, MySQLDataType columnType, boolean isPrimaryKey, int precision) {
+        public MySQLColumn(
+            String name,
+            MySQLDataType columnType,
+            boolean isPrimaryKey,
+            boolean isUnique,
+            boolean isNotNull,
+            int precision
+        ) {
             super(name, null, columnType);
             this.isPrimaryKey = isPrimaryKey;
+            this.isUnique = isUnique;
+            this.isNotNull = isNotNull;
             this.precision = precision;
         }
 
@@ -80,6 +92,14 @@ public class MySQLSchema extends AbstractSchema<MySQLGlobalState, MySQLTable> {
 
         public boolean isPrimaryKey() {
             return isPrimaryKey;
+        }
+
+        public boolean isUnique() {
+            return isUnique;
+        }
+
+        public boolean isNotNull() {
+            return isNotNull;
         }
 
     }
@@ -282,7 +302,11 @@ public class MySQLSchema extends AbstractSchema<MySQLGlobalState, MySQLTable> {
                     String dataType = rs.getString("DATA_TYPE");
                     int precision = rs.getInt("NUMERIC_PRECISION");
                     boolean isPrimaryKey = rs.getString("COLUMN_KEY").equals("PRI");
-                    MySQLColumn c = new MySQLColumn(columnName, getColumnType(dataType), isPrimaryKey, precision);
+                    boolean isUnique = rs.getString("COLUMN_KEY").equals("UNI");
+                    boolean isNotNull = rs.getString("IS_NULLABLE").equals("NO");
+                    MySQLColumn c = new MySQLColumn(
+                        columnName, getColumnType(dataType), isPrimaryKey, isUnique, isNotNull, precision
+                    );
                     columns.add(c);
                 }
             }

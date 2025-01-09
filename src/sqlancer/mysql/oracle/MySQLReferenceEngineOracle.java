@@ -11,7 +11,6 @@ import com.sqlengine.engine.Executor;
 import com.sqlengine.env.Row;
 import com.sqlengine.env.Table;
 
-import net.sf.jsqlparser.JSQLParserException;
 import sqlancer.ComparatorHelper;
 import sqlancer.Randomly;
 import sqlancer.common.oracle.TestOracle;
@@ -108,6 +107,8 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
         String selectStr = (selectQuery.asString() + ';')
                             // UNKNOWN is unsupported in JSQLParser.
                             .replaceAll(Pattern.quote("UNKNOWN"), "NULL")
+                            // DISTINCTROW is unsupported in JSQLParser.
+                            .replaceAll(Pattern.quote("DISTINCTROW"), "DISTINCT")
                             // Standardize conventions.
                             .replaceAll(Pattern.quote("! "), "NOT ")
                             .replaceAll(Pattern.quote("||"), "OR")

@@ -1,7 +1,11 @@
 package sqlancer.mysql.gen;
 
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import sqlancer.Randomly;
@@ -11,6 +15,8 @@ import sqlancer.mysql.MySQLErrors;
 import sqlancer.mysql.MySQLGlobalState;
 import sqlancer.mysql.MySQLSchema.MySQLColumn;
 import sqlancer.mysql.MySQLSchema.MySQLTable;
+import sqlancer.mysql.ast.MySQLExpression;
+import sqlancer.mysql.ast.MySQLConstant.MySQLNullConstant;
 import sqlancer.mysql.MySQLVisitor;
 
 public class MySQLInsertGenerator {
@@ -19,6 +25,8 @@ public class MySQLInsertGenerator {
     private final StringBuilder sb = new StringBuilder();
     private final ExpectedErrors errors = new ExpectedErrors();
     private final MySQLGlobalState globalState;
+
+    private static final Map<String, Map<String, Set<String>>> insertedValuesByTable = new HashMap<>();
 
     public MySQLInsertGenerator(MySQLGlobalState globalState, MySQLTable table) {
         this.globalState = globalState;
@@ -60,6 +68,50 @@ public class MySQLInsertGenerator {
         return generateInto();
     }
 
+    private boolean isColValueInsertable(MySQLExpression expr, MySQLColumn column) {
+        if (column.isPrimaryKey() || column.isUnique()) {
+            Set<String> existingColValues = insertedValuesByTable.getOrDefault(
+                table.getName(), new HashMap<>()
+            ).getOrDefault(
+                column.getName(), new HashSet<>()
+            );
+            if (existingColValues.contains(MySQLVisitor.asString(expr))) {
+                return false;
+            }
+            if (column.isPrimaryKey() && expr instanceof MySQLNullConstant) {
+                return false;
+            }
+        } else if (column.isNotNull()) {
+            if (expr instanceof MySQLNullConstant) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private String generateValidValueForColumn(MySQLExpressionGenerator gen, MySQLColumn column) {
+        MySQLExpression candidateExpr = null;
+
+        boolean hasGenerated = false;
+        while (!hasGenerated) {
+            candidateExpr = gen.generateConstant();
+            if (isColValueInsertable(candidateExpr, column)) {
+                hasGenerated = true;
+            }
+        }
+
+        String candidateValue = MySQLVisitor.asString(candidateExpr);
+
+        Map<String, Set<String>> tableValues = insertedValuesByTable.getOrDefault(table.getName(), new HashMap<>());
+        Set<String> colValues = tableValues.getOrDefault(column.getName(), new HashSet<>());
+        colValues.add(candidateValue);
+        tableValues.put(column.getName(), colValues);
+        insertedValuesByTable.put(table.getName(), tableValues);
+        
+        return candidateValue;
+    }
+
     private SQLQueryAdapter generateInto() {
         sb.append(" INTO ");
         sb.append(table.getName());
@@ -84,7 +136,8 @@ public class MySQLInsertGenerator {
                 if (c != 0) {
                     sb.append(", ");
                 }
-                sb.append(MySQLVisitor.asString(gen.generateConstant()));
+
+                sb.append(generateValidValueForColumn(gen, columns.get(c)));
 
             }
             sb.append(")");
