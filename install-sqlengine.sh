@@ -1,5 +1,5 @@
 cd sqlengine
-git pull
+git pull origin main
 mvn package -DskipTests
 cd ../
 mvn install:install-file \

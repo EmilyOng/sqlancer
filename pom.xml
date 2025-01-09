@@ -118,7 +118,7 @@
           </compilerArguments>
           <compilerId>eclipse</compilerId>
           <showWarnings>true</showWarnings>
-          <failOnWarning>false</failOnWarning>
+          <failOnWarning>true</failOnWarning>
         </configuration>
         <dependencies>
           <dependency>
