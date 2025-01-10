@@ -6,5 +6,6 @@ mvn install:install-file \
     -Dfile=sqlengine/target/sqlengine-1.0-SNAPSHOT.jar \
     -DgroupId=com.sqlengine \
     -DartifactId=sqlengine \
-    -Dversion=1.0-SNAPSHOT
+    -Dversion=1.0-SNAPSHOT \
+    -Dpackaging=jar
 mvn package -DskipTests
