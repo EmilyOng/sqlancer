@@ -115,7 +115,10 @@ public class MySQLInsertGenerator {
     private SQLQueryAdapter generateInto() {
         sb.append(" INTO ");
         sb.append(table.getName());
-        List<MySQLColumn> columns = table.getRandomNonEmptyColumnSubset();
+        List<MySQLColumn> columns = table.getRandomNonEmptyColumnSubset()
+            .stream().filter(column -> column.hasDefault())
+            .collect(Collectors.toList());
+        columns.addAll(table.getColumns().stream().filter(column -> !column.hasDefault()).collect(Collectors.toList()));
         sb.append("(");
         sb.append(columns.stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
         sb.append(") ");

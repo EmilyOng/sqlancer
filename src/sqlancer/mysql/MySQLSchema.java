@@ -55,11 +55,43 @@ public class MySQLSchema extends AbstractSchema<MySQLGlobalState, MySQLTable> {
 
     }
 
+    public static class MySQLColumnBuilder {
+
+        private MySQLColumn column;
+
+        public MySQLColumnBuilder(String name, MySQLDataType columnType, boolean isPrimaryKey, int precision) {
+            column  = new MySQLColumn(
+                name, columnType, isPrimaryKey, precision
+            );
+        }
+
+        public MySQLColumn createColumn() {
+            return column;
+        }
+
+        public MySQLColumnBuilder allowUnique(boolean isUnique) {
+            column.isUnique = isUnique;
+            return this;
+        }
+
+        public MySQLColumnBuilder allowNotNull(boolean isNotNull) {
+            column.isNotNull = isNotNull;
+            return this;
+        }
+
+        public MySQLColumnBuilder allowDefault(boolean hasDefault) {
+            column.hasDefault = hasDefault;
+            return this;
+        }
+    }
+
     public static class MySQLColumn extends AbstractTableColumn<MySQLTable, MySQLDataType> {
 
         private final boolean isPrimaryKey;
-        private final boolean isUnique;
-        private final boolean isNotNull;
+
+        private boolean isUnique = false;
+        private boolean isNotNull = false;
+        private boolean hasDefault = false;
 
         private final int precision;
 
@@ -71,18 +103,9 @@ public class MySQLSchema extends AbstractSchema<MySQLGlobalState, MySQLTable> {
             }
         }
 
-        public MySQLColumn(
-            String name,
-            MySQLDataType columnType,
-            boolean isPrimaryKey,
-            boolean isUnique,
-            boolean isNotNull,
-            int precision
-        ) {
+        public MySQLColumn(String name, MySQLDataType columnType, boolean isPrimaryKey, int precision) {
             super(name, null, columnType);
             this.isPrimaryKey = isPrimaryKey;
-            this.isUnique = isUnique;
-            this.isNotNull = isNotNull;
             this.precision = precision;
         }
 
@@ -100,6 +123,10 @@ public class MySQLSchema extends AbstractSchema<MySQLGlobalState, MySQLTable> {
 
         public boolean isNotNull() {
             return isNotNull;
+        }
+
+        public boolean hasDefault() {
+            return hasDefault;
         }
 
     }
@@ -304,9 +331,12 @@ public class MySQLSchema extends AbstractSchema<MySQLGlobalState, MySQLTable> {
                     boolean isPrimaryKey = rs.getString("COLUMN_KEY").equals("PRI");
                     boolean isUnique = rs.getString("COLUMN_KEY").equals("UNI");
                     boolean isNotNull = rs.getString("IS_NULLABLE").equals("NO");
-                    MySQLColumn c = new MySQLColumn(
-                        columnName, getColumnType(dataType), isPrimaryKey, isUnique, isNotNull, precision
-                    );
+                    boolean hasDefault = rs.getString("COLUMN_DEFAULT") != null;
+                    MySQLColumn c = new MySQLColumnBuilder(columnName, getColumnType(dataType), isPrimaryKey, precision)
+                        .allowUnique(isUnique)
+                        .allowNotNull(isNotNull)
+                        .allowDefault(hasDefault)
+                        .createColumn();
                     columns.add(c);
                 }
             }

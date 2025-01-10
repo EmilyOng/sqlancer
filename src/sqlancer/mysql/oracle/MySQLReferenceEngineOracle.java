@@ -15,7 +15,6 @@ import sqlancer.ComparatorHelper;
 import sqlancer.Randomly;
 import sqlancer.common.oracle.TestOracle;
 import sqlancer.common.query.Query;
-import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.mysql.MySQLGlobalState;
 import sqlancer.mysql.ast.MySQLSelect;
 import sqlancer.mysql.gen.MySQLRandomQuerySynthesizer;
@@ -120,6 +119,7 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
             return;
         }
         if (dbmsExecutionResult.throwable == null && referenceExecutionResult.throwable != null) {
+            System.out.println(selectStr);
             throw new AssertionError(String.format("Reference executor reports an exception: %s.", referenceExecutionResult.throwable));
         }
 
