@@ -21,12 +21,43 @@ import sqlancer.mysql.MySQLVisitor;
 
 public class MySQLInsertGenerator {
 
+    private static class InsertedValuesLookup {
+
+        private final Map<String, Map<String, Map<String, Set<String>>>> insertedValues;
+
+        public InsertedValuesLookup() {
+            this.insertedValues = new HashMap<>();
+        }
+
+        public synchronized void insertValue(String database, String table, String column, String value) {
+            Map<String, Map<String, Set<String>>> databaseValues = insertedValues
+                .getOrDefault(database, new HashMap<>());
+            Map<String, Set<String>> tableValues = databaseValues
+                .getOrDefault(table, new HashMap<>());
+            Set<String> columnValues = tableValues
+                .getOrDefault(column, new HashSet<>());
+            columnValues.add(value);
+
+            tableValues.put(column, columnValues);
+            databaseValues.put(table, tableValues);
+            insertedValues.put(database, databaseValues);
+        }
+
+        public synchronized boolean containsValue(String database, String table, String column, String value) {
+            return insertedValues
+                .getOrDefault(database, new HashMap<>())
+                .getOrDefault(table, new HashMap<>())
+                .getOrDefault(column, new HashSet<>())
+                .contains(value);
+        }
+    }
+
     private final MySQLTable table;
     private final StringBuilder sb = new StringBuilder();
     private final ExpectedErrors errors = new ExpectedErrors();
     private final MySQLGlobalState globalState;
 
-    private static final Map<String, Map<String, Set<String>>> insertedValuesByTable = new HashMap<>();
+    private static final InsertedValuesLookup lookup = new InsertedValuesLookup();
 
     public MySQLInsertGenerator(MySQLGlobalState globalState, MySQLTable table) {
         this.globalState = globalState;
@@ -70,12 +101,12 @@ public class MySQLInsertGenerator {
 
     private boolean isColValueInsertable(MySQLExpression expr, MySQLColumn column) {
         if (column.isPrimaryKey() || column.isUnique()) {
-            Set<String> existingColValues = insertedValuesByTable.getOrDefault(
-                table.getName(), new HashMap<>()
-            ).getOrDefault(
-                column.getName(), new HashSet<>()
-            );
-            if (existingColValues.contains(MySQLVisitor.asString(expr))) {
+            if (lookup.containsValue(
+                globalState.getDatabaseName(),
+                table.getName(),
+                column.getName(),
+                MySQLVisitor.asString(expr)
+            )) {
                 return false;
             }
             if (column.isPrimaryKey() && expr instanceof MySQLNullConstant) {
@@ -103,11 +134,12 @@ public class MySQLInsertGenerator {
 
         String candidateValue = MySQLVisitor.asString(candidateExpr);
 
-        Map<String, Set<String>> tableValues = insertedValuesByTable.getOrDefault(table.getName(), new HashMap<>());
-        Set<String> colValues = tableValues.getOrDefault(column.getName(), new HashSet<>());
-        colValues.add(candidateValue);
-        tableValues.put(column.getName(), colValues);
-        insertedValuesByTable.put(table.getName(), tableValues);
+        lookup.insertValue(
+            globalState.getDatabaseName(),
+            table.getName(),
+            column.getName(),
+            candidateValue
+        );
         
         return candidateValue;
     }
