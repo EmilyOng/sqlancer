@@ -37,7 +37,7 @@ public class TiDBInsertGenerator {
     private SQLQueryAdapter get(TiDBTable table) {
         gen = new TiDBExpressionGenerator(globalState).setColumns(table.getColumns());
         StringBuilder sb = new StringBuilder();
-        boolean isInsert = Randomly.getBoolean();
+        boolean isInsert = globalState.usesReferenceEngine() || Randomly.getBoolean();
         if (isInsert) {
             sb.append("INSERT");
         } else {

@@ -47,17 +47,17 @@ public class TiDBTableGenerator {
         StringBuilder sb = new StringBuilder("CREATE TABLE ");
         sb.append(tableName);
 
-        if (Randomly.getBoolean() && globalState.getSchema().getDatabaseTables().size() > 0) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBoolean() && globalState.getSchema().getDatabaseTables().size() > 0) {
             sb.append(" LIKE ");
             TiDBTable otherTable = globalState.getSchema().getRandomTable();
             sb.append(otherTable.getName());
         } else {
-            createNewTable(gen, sb);
+            createNewTable(gen, globalState, sb);
         }
         return new SQLQueryAdapter(sb.toString(), errors, true);
     }
 
-    private void createNewTable(TiDBExpressionGenerator gen, StringBuilder sb) {
+    private void createNewTable(TiDBExpressionGenerator gen, TiDBGlobalState globalState, StringBuilder sb) {
         sb.append("(");
         for (int i = 0; i < columns.size(); i++) {
             if (i != 0) {
@@ -66,7 +66,7 @@ public class TiDBTableGenerator {
             sb.append(columns.get(i).getName());
             sb.append(" ");
             TiDBCompositeDataType type;
-            type = TiDBCompositeDataType.getRandom();
+            type = TiDBCompositeDataType.getRandom(globalState);
             appendType(sb, type);
             sb.append(" ");
             boolean isGeneratedColumn = Randomly.getBooleanWithRatherLowProbability();
@@ -98,7 +98,7 @@ public class TiDBTableGenerator {
                 errors.add(
                         "All parts of a PRIMARY KEY must be NOT NULL; if you need NULL in a key, use UNIQUE instead");
             }
-            if (type.getPrimitiveDataType() == TiDBDataType.INT && Randomly.getBooleanWithRatherLowProbability()
+            if (!globalState.usesReferenceEngine() && type.getPrimitiveDataType() == TiDBDataType.INT && Randomly.getBooleanWithRatherLowProbability()
                     && !isGeneratedColumn) {
                 sb.append(" AUTO_INCREMENT ");
                 errors.add("there can be only one auto column and it must be defined as a key");
@@ -117,7 +117,7 @@ public class TiDBTableGenerator {
             sb.append(
                     Randomly.nonEmptySubset(columns).stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
             sb.append(")");
-            // TODO: do nto include blob/text columns here
+            // TODO: do not include blob/text columns here
             errors.add(" used in key specification without a key length");
         }
         sb.append(")");

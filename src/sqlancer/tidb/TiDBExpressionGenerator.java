@@ -53,8 +53,12 @@ public class TiDBExpressionGenerator extends UntypedExpressionGenerator<TiDBExpr
         UNARY_POSTFIX, //
         CONSTANT, //
         COLUMN, //
-        COMPARISON, REGEX, FUNCTION, BINARY_LOGICAL, BINARY_BIT, CAST, DEFAULT, CASE
+        COMPARISON, REGEX, FUNCTION, BINARY_LOGICAL, BINARY_BIT, CAST, DEFAULT, CASE;
         // BINARY_ARITHMETIC
+
+        private static Gen[] valuesReferenceEngine() {
+            return new Gen[] { UNARY_PREFIX, UNARY_POSTFIX, CONSTANT, COMPARISON, BINARY_LOGICAL };
+        }
     }
 
     private final TiDBGlobalState globalState;
@@ -67,7 +71,7 @@ public class TiDBExpressionGenerator extends UntypedExpressionGenerator<TiDBExpr
 
     @Override
     public TiDBExpression generateConstant() {
-        TiDBDataType type = TiDBDataType.getRandom();
+        TiDBDataType type = TiDBDataType.getRandom(globalState);
         if (Randomly.getBooleanWithRatherLowProbability()) {
             return TiDBConstant.createNullConstant();
         }
@@ -192,7 +196,11 @@ public class TiDBExpressionGenerator extends UntypedExpressionGenerator<TiDBExpr
             List<TiDBExpression> args = generateExpressions(func.getNrArgs());
             return new TiDBAggregate(args, func);
         }
-        switch (Randomly.fromOptions(Gen.values())) {
+
+        Gen[] genValues = globalState.usesReferenceEngine()
+            ? Gen.valuesReferenceEngine()
+            : Gen.values();
+        switch (Randomly.fromOptions(genValues)) {
         case DEFAULT:
             if (globalState.getSchema().getDatabaseTables().isEmpty()) {
                 throw new IgnoreMeException();
@@ -205,7 +213,7 @@ public class TiDBExpressionGenerator extends UntypedExpressionGenerator<TiDBExpr
         case UNARY_POSTFIX:
             return new TiDBUnaryPostfixOperation(generateExpression(depth + 1), TiDBUnaryPostfixOperator.getRandom());
         case UNARY_PREFIX:
-            TiDBUnaryPrefixOperator rand = TiDBUnaryPrefixOperator.getRandom();
+            TiDBUnaryPrefixOperator rand = TiDBUnaryPrefixOperator.getRandom(globalState);
             return new TiDBUnaryPrefixOperation(generateExpression(depth + 1), rand);
         case COLUMN:
             return generateColumn();

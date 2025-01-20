@@ -45,7 +45,7 @@ public final class TiDBAlterTableGenerator {
             sb.append("MODIFY ");
             sb.append(column.getName());
             sb.append(" ");
-            sb.append(TiDBCompositeDataType.getRandom().toString());
+            sb.append(TiDBCompositeDataType.getRandom(globalState).toString());
             break;
         case DROP_COLUMN:
             sb.append(" DROP ");

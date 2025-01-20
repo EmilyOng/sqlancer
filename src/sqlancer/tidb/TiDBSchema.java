@@ -32,8 +32,15 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
             this.isPrimitive = isPrimitive;
         }
 
-        public static TiDBDataType getRandom() {
-            return Randomly.fromOptions(values());
+        public static TiDBDataType[] valuesReferenceEngine() {
+            return new TiDBDataType[] { INT, BOOL };
+        }
+
+        public static TiDBDataType getRandom(TiDBGlobalState globalState) {
+            TiDBDataType[] values = globalState.usesReferenceEngine()
+                ? TiDBDataType.valuesReferenceEngine()
+                : values();
+            return Randomly.fromOptions(values);
         }
 
         public boolean isPrimitive() {
@@ -106,12 +113,14 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
             return new TiDBCompositeDataType(TiDBDataType.INT, size);
         }
 
-        public static TiDBCompositeDataType getRandom() {
-            TiDBDataType primitiveType = TiDBDataType.getRandom();
+        public static TiDBCompositeDataType getRandom(TiDBGlobalState globalState) {
+            TiDBDataType primitiveType = TiDBDataType.getRandom(globalState);
             int size = -1;
             switch (primitiveType) {
             case INT:
-                size = Randomly.fromOptions(1, 2, 4, 8);
+                size = globalState.usesReferenceEngine()
+                    ? Randomly.fromOptions(4, 8)
+                    : Randomly.fromOptions(1, 2, 4, 8);
                 break;
             case FLOATING:
                 size = Randomly.fromOptions(4, 8);

@@ -67,8 +67,12 @@ public class TiDBProvider extends SQLProviderAdapter<TiDBGlobalState, TiDBOption
         }
 
         @Override
-        public SQLQueryAdapter getQuery(TiDBGlobalState state) throws Exception {
-            return sqlQueryProvider.getQuery(state);
+        public SQLQueryAdapter getQuery(TiDBGlobalState globalState) throws Exception {
+            return sqlQueryProvider.getQuery(globalState);
+        }
+
+        public static Action[] valuesReferenceEngine() {
+            return new Action[] { INSERT, CREATE_INDEX };
         }
     }
 
@@ -77,6 +81,10 @@ public class TiDBProvider extends SQLProviderAdapter<TiDBGlobalState, TiDBOption
         @Override
         protected TiDBSchema readSchema() throws SQLException {
             return TiDBSchema.fromConnection(getConnection(), getDatabaseName());
+        }
+
+        public boolean usesReferenceEngine() {
+            return getDbmsSpecificOptions().oracle.stream().anyMatch(o -> o == TiDBOracleFactory.REFERENCE_ENGINE);
         }
 
     }
@@ -121,7 +129,8 @@ public class TiDBProvider extends SQLProviderAdapter<TiDBGlobalState, TiDBOption
             } while (!success);
         }
 
-        StatementExecutor<TiDBGlobalState, Action> se = new StatementExecutor<>(globalState, Action.values(),
+        Action[] values = globalState.usesReferenceEngine() ? Action.valuesReferenceEngine() : Action.values();
+        StatementExecutor<TiDBGlobalState, Action> se = new StatementExecutor<>(globalState, values,
                 TiDBProvider::mapActions, (q) -> {
                     if (globalState.getSchema().getDatabaseTables().isEmpty()) {
                         throw new IgnoreMeException();

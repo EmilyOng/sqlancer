@@ -3,6 +3,7 @@ package sqlancer.tidb.ast;
 import sqlancer.Randomly;
 import sqlancer.common.ast.BinaryOperatorNode.Operator;
 import sqlancer.common.ast.UnaryOperatorNode;
+import sqlancer.tidb.TiDBProvider.TiDBGlobalState;
 import sqlancer.tidb.ast.TiDBUnaryPrefixOperation.TiDBUnaryPrefixOperator;
 
 public class TiDBUnaryPrefixOperation extends UnaryOperatorNode<TiDBExpression, TiDBUnaryPrefixOperator>
@@ -21,7 +22,10 @@ public class TiDBUnaryPrefixOperation extends UnaryOperatorNode<TiDBExpression, 
             this.s = s;
         }
 
-        public static TiDBUnaryPrefixOperator getRandom() {
+        public static TiDBUnaryPrefixOperator getRandom(TiDBGlobalState globalState) {
+            if (globalState.usesReferenceEngine()) {
+                return Randomly.fromOptions(NOT, PLUS, MINUS);    
+            }
             return Randomly.fromOptions(values());
         }
 

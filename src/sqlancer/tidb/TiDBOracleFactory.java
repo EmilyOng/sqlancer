@@ -72,6 +72,14 @@ public enum TiDBOracleFactory implements OracleFactory<TiDBProvider.TiDBGlobalSt
                 throws SQLException {
             return new TiDBDQPOracle(globalState);
         }
+    },
+    REFERENCE_ENGINE {
+        @Override
+        public TestOracle<TiDBProvider.TiDBGlobalState> create(TiDBProvider.TiDBGlobalState globalState)
+                throws SQLException {
+            // TODO (EmilyOng): Implement reference engine oracle.
+            return null;
+        }
     };
 
 }
