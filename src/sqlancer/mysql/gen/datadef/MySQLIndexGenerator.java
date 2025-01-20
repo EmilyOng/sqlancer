@@ -40,12 +40,12 @@ public class MySQLIndexGenerator {
         ExpectedErrors errors = new ExpectedErrors();
         MySQLErrors.addExpressionErrors(errors);
         sb.append("CREATE ");
-        if (Randomly.getBoolean()) {
-            // "FULLTEXT" TODO Column 'c3' cannot be part of FULLTEXT index
-            // A SPATIAL index may only contain a geometrical type column
-            sb.append("UNIQUE ");
-            errors.add("Duplicate entry");
-        }
+        // if (Randomly.getBoolean()) {
+        //     // "FULLTEXT" TODO Column 'c3' cannot be part of FULLTEXT index
+        //     // A SPATIAL index may only contain a geometrical type column
+        //     sb.append("UNIQUE ");
+        //     errors.add("Duplicate entry");
+        // }
         sb.append("INDEX ");
         sb.append(globalState.getSchema().getFreeIndexName());
         indexType();

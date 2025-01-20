@@ -53,7 +53,10 @@ public class MySQLReferenceEngineOracle implements TestOracle<MySQLGlobalState> 
             if (
                 queryStatementStr.startsWith("DROP DATABASE") ||
                 queryStatementStr.startsWith("CREATE DATABASE") ||
-                queryStatementStr.startsWith("USE")
+                queryStatementStr.startsWith("USE") ||
+                queryStatementStr.startsWith("CREATE INDEX") ||
+                queryStatementStr.startsWith("CREATE UNIQUE INDEX") ||
+                queryStatementStr.startsWith("DROP INDEX")
             ) {
                 // Ignore database statements.
                 continue;

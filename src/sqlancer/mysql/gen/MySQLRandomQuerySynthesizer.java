@@ -9,6 +9,7 @@ import sqlancer.mysql.MySQLGlobalState;
 import sqlancer.mysql.MySQLSchema.MySQLTables;
 import sqlancer.mysql.ast.MySQLConstant;
 import sqlancer.mysql.ast.MySQLExpression;
+import sqlancer.mysql.ast.MySQLJoin;
 import sqlancer.mysql.ast.MySQLSelect;
 import sqlancer.mysql.ast.MySQLTableReference;
 
@@ -27,7 +28,12 @@ public final class MySQLRandomQuerySynthesizer {
 
         boolean hasGeneratedAggregate = false;
 
-        select.setSelectType(Randomly.fromOptions(MySQLSelect.SelectType.values()));
+        if (globalState.usesReferenceEngine()) {
+            select.setSelectType(Randomly.fromOptions(MySQLSelect.SelectType.valuesReferenceEngine()));
+        } else {
+            select.setSelectType(Randomly.fromOptions(MySQLSelect.SelectType.values()));
+        }
+
         boolean hasGeneratedNonAggregate = false;
         for (int i = 0; i < nrColumns; i++) {
             if (!hasGeneratedNonAggregate || Randomly.getBoolean()) {
@@ -50,6 +56,10 @@ public final class MySQLRandomQuerySynthesizer {
         }
         if (Randomly.getBooleanWithRatherLowProbability()) {
             select.setOrderByClauses(gen.generateOrderBys());
+        }
+        if (Randomly.getBoolean()) {
+            List<MySQLJoin> joinExpressions = MySQLJoin.getRandomJoinClauses(tables.getTables(), globalState);
+            select.setJoinList(joinExpressions.stream().map(join -> (MySQLExpression) join).collect(Collectors.toList()));
         }
         if (hasGeneratedAggregate) {
             select.setGroupByExpressions(columnsWithoutAggregations);
