@@ -69,6 +69,10 @@ public class TiDBExpressionGenerator extends UntypedExpressionGenerator<TiDBExpr
         this.globalState = globalState;
     }
 
+    public void setAllowAggregates(boolean allowAggregates) {
+        this.allowAggregates = allowAggregates;
+    }
+
     @Override
     public TiDBExpression generateConstant() {
         TiDBDataType type = TiDBDataType.getRandom(globalState);
@@ -192,9 +196,7 @@ public class TiDBExpressionGenerator extends UntypedExpressionGenerator<TiDBExpr
         }
         if (allowAggregates && Randomly.getBoolean()) {
             allowAggregates = false;
-            TiDBAggregateFunction func = TiDBAggregateFunction.getRandom();
-            List<TiDBExpression> args = generateExpressions(func.getNrArgs());
-            return new TiDBAggregate(args, func);
+            generateAggregate();
         }
 
         Gen[] genValues = globalState.usesReferenceEngine()
@@ -256,6 +258,12 @@ public class TiDBExpressionGenerator extends UntypedExpressionGenerator<TiDBExpr
     @Override
     public String generateExplainQuery(TiDBSelect select) {
         return "EXPLAIN " + select.asString();
+    }
+
+    public TiDBExpression generateAggregate() {
+        TiDBAggregateFunction func = TiDBAggregateFunction.getRandom(globalState);
+        List<TiDBExpression> args = generateExpressions(func.getNrArgs());
+        return new TiDBAggregate(args, func);
     }
 
     @Override

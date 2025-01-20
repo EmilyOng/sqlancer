@@ -22,8 +22,12 @@ public class TiDBJoin implements TiDBExpression, Join<TiDBExpression, TiDBTable,
     public enum JoinType {
         NATURAL, INNER, STRAIGHT, LEFT, RIGHT, CROSS;
 
-        public static JoinType getRandom() {
-            return Randomly.fromOptions(values());
+        public static JoinType getRandom(TiDBGlobalState globalState) {
+            if (globalState.usesReferenceEngine()) {
+                return Randomly.fromOptions(INNER, LEFT, RIGHT, CROSS);
+            } else {
+                return Randomly.fromOptions(values());
+            }
         }
 
         public static JoinType getRandomExcept(JoinType... exclude) {
@@ -111,7 +115,7 @@ public class TiDBJoin implements TiDBExpression, Join<TiDBExpression, TiDBTable,
             List<TiDBColumn> columns = new ArrayList<>(leftTable.getTable().getColumns());
             columns.addAll(rightTable.getTable().getColumns());
             TiDBExpressionGenerator joinGen = new TiDBExpressionGenerator(globalState).setColumns(columns);
-            switch (TiDBJoin.JoinType.getRandom()) {
+            switch (TiDBJoin.JoinType.getRandom(globalState)) {
             case INNER:
                 joinExpressions.add(TiDBJoin.createInnerJoin(leftTable, rightTable, joinGen.generateExpression()));
                 break;
@@ -146,7 +150,7 @@ public class TiDBJoin implements TiDBExpression, Join<TiDBExpression, TiDBTable,
             List<TiDBColumn> columns = new ArrayList<>(leftTable.getTable().getColumns());
             columns.addAll(rightTable.getTable().getColumns());
             TiDBExpressionGenerator joinGen = new TiDBExpressionGenerator(globalState).setColumns(columns);
-            switch (TiDBJoin.JoinType.getRandom()) {
+            switch (TiDBJoin.JoinType.getRandom(globalState)) {
             case INNER:
                 joinExpressions.add(TiDBJoin.createInnerJoin(leftTable, rightTable, joinGen.generateExpression()));
                 break;

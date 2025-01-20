@@ -13,6 +13,7 @@ import sqlancer.common.oracle.TestOracle;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.common.query.SQLancerResultSet;
 import sqlancer.tidb.oracle.TiDBDQPOracle;
+import sqlancer.tidb.oracle.TiDBReferenceEngineOracle;
 import sqlancer.tidb.oracle.TiDBTLPHavingOracle;
 
 public enum TiDBOracleFactory implements OracleFactory<TiDBProvider.TiDBGlobalState> {
@@ -77,8 +78,7 @@ public enum TiDBOracleFactory implements OracleFactory<TiDBProvider.TiDBGlobalSt
         @Override
         public TestOracle<TiDBProvider.TiDBGlobalState> create(TiDBProvider.TiDBGlobalState globalState)
                 throws SQLException {
-            // TODO (EmilyOng): Implement reference engine oracle.
-            return null;
+            return new TiDBReferenceEngineOracle(globalState);
         }
     };
 

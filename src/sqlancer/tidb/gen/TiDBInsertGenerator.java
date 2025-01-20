@@ -63,7 +63,7 @@ public class TiDBInsertGenerator {
             sb.append(") VALUES ");
             insertColumns(sb, columnSubset);
         }
-        if (isInsert && Randomly.getBoolean()) {
+        if (!globalState.usesReferenceEngine() && isInsert && Randomly.getBoolean()) {
             sb.append(" ON DUPLICATE KEY UPDATE ");
             sb.append(table.getRandomColumn().getName());
             sb.append("=");

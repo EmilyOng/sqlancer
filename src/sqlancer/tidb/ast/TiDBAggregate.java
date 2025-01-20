@@ -4,6 +4,7 @@ import java.util.List;
 
 import sqlancer.Randomly;
 import sqlancer.common.ast.FunctionNode;
+import sqlancer.tidb.TiDBProvider.TiDBGlobalState;
 import sqlancer.tidb.ast.TiDBAggregate.TiDBAggregateFunction;
 
 public class TiDBAggregate extends FunctionNode<TiDBAggregateFunction, TiDBExpression> implements TiDBExpression {
@@ -17,8 +18,12 @@ public class TiDBAggregate extends FunctionNode<TiDBAggregateFunction, TiDBExpre
             this.nrArgs = nrArgs;
         }
 
-        public static TiDBAggregateFunction getRandom() {
-            return Randomly.fromOptions(values());
+        public static TiDBAggregateFunction getRandom(TiDBGlobalState globalState) {
+            if (globalState.usesReferenceEngine()) {
+                return Randomly.fromOptions(COUNT, SUM, MIN, MAX);
+            } else {
+                return Randomly.fromOptions(values());
+            }
         }
 
         public int getNrArgs() {

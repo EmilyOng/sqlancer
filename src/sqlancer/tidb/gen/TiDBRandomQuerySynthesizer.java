@@ -10,6 +10,7 @@ import sqlancer.tidb.TiDBExpressionGenerator;
 import sqlancer.tidb.TiDBProvider.TiDBGlobalState;
 import sqlancer.tidb.TiDBSchema.TiDBTables;
 import sqlancer.tidb.ast.TiDBExpression;
+import sqlancer.tidb.ast.TiDBJoin;
 import sqlancer.tidb.ast.TiDBSelect;
 import sqlancer.tidb.ast.TiDBTableReference;
 import sqlancer.tidb.visitor.TiDBVisitor;
@@ -27,24 +28,46 @@ public final class TiDBRandomQuerySynthesizer {
     public static TiDBSelect generateSelect(TiDBGlobalState globalState, int nrColumns) {
         TiDBTables tables = globalState.getSchema().getRandomTableNonEmptyTables();
         TiDBExpressionGenerator gen = new TiDBExpressionGenerator(globalState).setColumns(tables.getColumns());
+        // Generate aggregates separately.
+        gen.setAllowAggregates(false);
         TiDBSelect select = new TiDBSelect();
+
         // select.setDistinct(Randomly.getBoolean());
-        List<TiDBExpression> columns = new ArrayList<>();
-        // TODO: also generate aggregates
-        columns.addAll(gen.generateExpressions(nrColumns));
-        select.setFetchColumns(columns);
+        
+        List<TiDBExpression> allColumns = new ArrayList<>();
+        List<TiDBExpression> columnsWithoutAggregations = new ArrayList<>();
+
+        boolean hasGeneratedAggregate = false;
+        boolean hasGeneratedNonAggregate = false;
+        for (int i = 0; i < nrColumns; i++) {
+            if (!hasGeneratedNonAggregate || Randomly.getBoolean()) {
+                TiDBExpression expression = gen.generateExpression();
+                allColumns.add(expression);
+                columnsWithoutAggregations.add(expression);
+                hasGeneratedNonAggregate = true;
+            } else {
+                allColumns.add(gen.generateAggregate());
+                hasGeneratedAggregate = true;
+            }
+        }
+
+        select.setFetchColumns(allColumns);
         List<TiDBExpression> tableList = tables.getTables().stream().map(t -> new TiDBTableReference(t))
                 .collect(Collectors.toList());
-        // TODO: generate joins
+
         select.setFromList(tableList);
         if (Randomly.getBoolean()) {
             select.setWhereClause(gen.generateExpression());
         }
+        if (Randomly.getBoolean()) {
+            List<TiDBJoin> joinExpressions = TiDBJoin.getJoins(tableList, globalState);
+            select.setJoinList(joinExpressions.stream().map(join -> (TiDBExpression) join).collect(Collectors.toList()));
+        }
         if (Randomly.getBooleanWithRatherLowProbability()) {
             select.setOrderByClauses(gen.generateOrderBys());
         }
-        if (Randomly.getBoolean()) {
-            select.setGroupByExpressions(gen.generateExpressions(Randomly.smallNumber() + 1));
+        if (hasGeneratedAggregate) {
+            select.setGroupByExpressions(columnsWithoutAggregations);
             if (Randomly.getBoolean()) {
                 select.setHavingClause(gen.generateHavingClause());
             }
@@ -52,7 +75,7 @@ public final class TiDBRandomQuerySynthesizer {
         if (Randomly.getBoolean()) {
             select.setLimitClause(gen.generateExpression());
         }
-        if (Randomly.getBoolean()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBoolean()) {
             select.setOffsetClause(gen.generateExpression());
         }
         return select;

@@ -67,7 +67,7 @@ public class TiDBTableGenerator {
             sb.append(" ");
             TiDBCompositeDataType type;
             type = TiDBCompositeDataType.getRandom(globalState);
-            appendType(sb, type);
+            appendType(sb, type, globalState);
             sb.append(" ");
             boolean isGeneratedColumn = Randomly.getBooleanWithRatherLowProbability();
             if (isGeneratedColumn) {
@@ -121,7 +121,7 @@ public class TiDBTableGenerator {
             errors.add(" used in key specification without a key length");
         }
         sb.append(")");
-        if (Randomly.getBooleanWithRatherLowProbability()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBooleanWithRatherLowProbability()) {
             sb.append("PARTITION BY HASH(");
             sb.append(TiDBVisitor.asString(gen.generateExpression()));
             sb.append(") ");
@@ -141,17 +141,17 @@ public class TiDBTableGenerator {
         return type.getPrimitiveDataType() != TiDBDataType.TEXT && type.getPrimitiveDataType() != TiDBDataType.BLOB;
     }
 
-    private void appendType(StringBuilder sb, TiDBCompositeDataType type) {
+    private void appendType(StringBuilder sb, TiDBCompositeDataType type, TiDBGlobalState globalState) {
         sb.append(type.toString());
         appendSpecifiers(sb, type.getPrimitiveDataType());
-        appendSizeSpecifiers(sb, type.getPrimitiveDataType());
+        appendSizeSpecifiers(sb, type.getPrimitiveDataType(), globalState);
     }
 
-    private void appendSizeSpecifiers(StringBuilder sb, TiDBDataType type) {
+    private void appendSizeSpecifiers(StringBuilder sb, TiDBDataType type, TiDBGlobalState globalState) {
         if (type.isNumeric() && Randomly.getBoolean()) {
             sb.append(" UNSIGNED");
         }
-        if (type.isNumeric() && Randomly.getBoolean()) {
+        if (!globalState.usesReferenceEngine() && type.isNumeric() && Randomly.getBoolean()) {
             sb.append(" ZEROFILL");
         }
     }
