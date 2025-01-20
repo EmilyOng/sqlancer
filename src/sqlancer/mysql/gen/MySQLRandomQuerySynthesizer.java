@@ -28,11 +28,11 @@ public final class MySQLRandomQuerySynthesizer {
 
         boolean hasGeneratedAggregate = false;
 
-        if (globalState.usesReferenceEngine()) {
-            select.setSelectType(Randomly.fromOptions(MySQLSelect.SelectType.valuesReferenceEngine()));
-        } else {
-            select.setSelectType(Randomly.fromOptions(MySQLSelect.SelectType.values()));
-        }
+        // if (globalState.usesReferenceEngine()) {
+        //     select.setSelectType(Randomly.fromOptions(MySQLSelect.SelectType.valuesReferenceEngine()));
+        // } else {
+        //     select.setSelectType(Randomly.fromOptions(MySQLSelect.SelectType.values()));
+        // }
 
         boolean hasGeneratedNonAggregate = false;
         for (int i = 0; i < nrColumns; i++) {
@@ -62,10 +62,13 @@ public final class MySQLRandomQuerySynthesizer {
             select.setJoinList(joinExpressions.stream().map(join -> (MySQLExpression) join).collect(Collectors.toList()));
         }
         if (hasGeneratedAggregate) {
+            select.setSelectType(MySQLSelect.SelectType.ALL);
             select.setGroupByExpressions(columnsWithoutAggregations);
             if (Randomly.getBoolean()) {
                 select.setHavingClause(gen.generateHavingClause());
             }
+        } else {
+            select.setSelectType(Randomly.fromOptions(MySQLSelect.SelectType.valuesReferenceEngine()));
         }
         if (Randomly.getBoolean()) {
             select.setLimitClause(MySQLConstant.createIntConstant(Randomly.getPositiveOrZeroNonCachedInteger()));
