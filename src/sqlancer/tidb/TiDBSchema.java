@@ -168,19 +168,25 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
     public static class TiDBColumn extends AbstractTableColumn<TiDBTable, TiDBCompositeDataType> {
 
         private final boolean isPrimaryKey;
+        private final boolean isUnique;
         private final boolean isNullable;
         private final boolean hasDefault;
 
-        public TiDBColumn(String name, TiDBCompositeDataType columnType, boolean isPrimaryKey, boolean isNullable,
-                boolean hasDefault) {
+        public TiDBColumn(String name, TiDBCompositeDataType columnType, boolean isPrimaryKey, boolean isUnique,
+                boolean isNullable, boolean hasDefault) {
             super(name, null, columnType);
             this.isPrimaryKey = isPrimaryKey;
+            this.isUnique = isUnique;
             this.isNullable = isNullable;
             this.hasDefault = hasDefault;
         }
 
         public boolean isPrimaryKey() {
             return isPrimaryKey;
+        }
+
+        public boolean isUnique() {
+            return isUnique;
         }
 
         public boolean isNullable() {
@@ -364,9 +370,10 @@ public class TiDBSchema extends AbstractSchema<TiDBGlobalState, TiDBTable> {
                     String dataType = rs.getString("Type");
                     boolean isNullable = rs.getString("Null").contentEquals("YES");
                     boolean isPrimaryKey = rs.getString("Key").contains("PRI");
+                    boolean isUnique = rs.getString("Key").contains("UNI");
                     boolean hasDefault = rs.getString("Default") != null;
-                    TiDBColumn c = new TiDBColumn(columnName, getColumnType(dataType), isPrimaryKey, isNullable,
-                            hasDefault);
+                    TiDBColumn c = new TiDBColumn(columnName, getColumnType(dataType), isPrimaryKey, isUnique,
+                            isNullable, hasDefault);
                     columns.add(c);
                 }
             }

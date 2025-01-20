@@ -6,12 +6,15 @@ import java.util.stream.Collectors;
 
 import sqlancer.Randomly;
 import sqlancer.common.query.ExpectedErrors;
+import sqlancer.common.query.InsertedValuesLookup;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.tidb.TiDBErrors;
 import sqlancer.tidb.TiDBExpressionGenerator;
 import sqlancer.tidb.TiDBProvider.TiDBGlobalState;
 import sqlancer.tidb.TiDBSchema.TiDBColumn;
 import sqlancer.tidb.TiDBSchema.TiDBTable;
+import sqlancer.tidb.ast.TiDBExpression;
+import sqlancer.tidb.ast.TiDBConstant.TiDBNullConstant;
 import sqlancer.tidb.visitor.TiDBVisitor;
 
 public class TiDBInsertGenerator {
@@ -19,6 +22,8 @@ public class TiDBInsertGenerator {
     private final TiDBGlobalState globalState;
     private final ExpectedErrors errors = new ExpectedErrors();
     private TiDBExpressionGenerator gen;
+
+    private static final InsertedValuesLookup lookup = new InsertedValuesLookup();
 
     public TiDBInsertGenerator(TiDBGlobalState globalState) {
         this.globalState = globalState;
@@ -55,13 +60,13 @@ public class TiDBInsertGenerator {
         if (Randomly.getBoolean()) {
             sb.append(" VALUES ");
             List<TiDBColumn> columns = table.getColumns();
-            insertColumns(sb, columns);
+            insertColumns(sb, columns, table);
         } else {
             List<TiDBColumn> columnSubset = table.getRandomNonEmptyColumnSubset();
             sb.append("(");
             sb.append(columnSubset.stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
             sb.append(") VALUES ");
-            insertColumns(sb, columnSubset);
+            insertColumns(sb, columnSubset, table);
         }
         if (!globalState.usesReferenceEngine() && isInsert && Randomly.getBoolean()) {
             sb.append(" ON DUPLICATE KEY UPDATE ");
@@ -73,7 +78,52 @@ public class TiDBInsertGenerator {
         return new SQLQueryAdapter(sb.toString(), errors);
     }
 
-    private void insertColumns(StringBuilder sb, List<TiDBColumn> columns) {
+    private boolean isColValueInsertable(TiDBExpression expr, TiDBColumn column, TiDBTable table) {
+        if (column.isPrimaryKey() || column.isUnique()) {
+            if (lookup.containsValue(
+                globalState.getDatabaseName(),
+                table.getName(),
+                column.getName(),
+                TiDBVisitor.asString(expr)
+            )) {
+                return false;
+            }
+            if (column.isPrimaryKey() && expr instanceof TiDBNullConstant) {
+                return false;
+            }
+        } else if (!column.isNullable()) {
+            if (expr instanceof TiDBNullConstant) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private String generateValidValueForColumn(TiDBExpressionGenerator gen, TiDBColumn column, TiDBTable table) {
+        TiDBExpression candidateExpr = null;
+
+        boolean hasGenerated = false;
+        while (!hasGenerated) {
+            candidateExpr = gen.generateConstant(column.getType().getPrimitiveDataType());
+            if (isColValueInsertable(candidateExpr, column, table)) {
+                hasGenerated = true;
+            }
+        }
+
+        String candidateValue = TiDBVisitor.asString(candidateExpr);
+
+        lookup.insertValue(
+            globalState.getDatabaseName(),
+            table.getName(),
+            column.getName(),
+            candidateValue
+        );
+        
+        return candidateValue;
+    }
+
+    private void insertColumns(StringBuilder sb, List<TiDBColumn> columns, TiDBTable table) {
         for (int nrRows = 0; nrRows < Randomly.smallNumber() + 1; nrRows++) {
             if (nrRows != 0) {
                 sb.append(", ");
@@ -84,7 +134,7 @@ public class TiDBInsertGenerator {
                 if (i++ != 0) {
                     sb.append(", ");
                 }
-                sb.append(TiDBVisitor.asString(gen.generateConstant(c.getType().getPrimitiveDataType())));
+                sb.append(generateValidValueForColumn(gen, c, table));
             }
             sb.append(")");
         }

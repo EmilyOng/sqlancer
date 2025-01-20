@@ -39,7 +39,7 @@ public class TiDBTableGenerator {
         allowPrimaryKey = Randomly.getBoolean();
         primaryKeyAsTableConstraints = allowPrimaryKey && Randomly.getBoolean();
         for (int i = 0; i < nrColumns; i++) {
-            TiDBColumn fakeColumn = new TiDBColumn("c" + i, null, false, false, false);
+            TiDBColumn fakeColumn = new TiDBColumn("c" + i, null, false, false, false, false);
             columns.add(fakeColumn);
         }
         TiDBExpressionGenerator gen = new TiDBExpressionGenerator(globalState).setColumns(columns);
@@ -148,7 +148,7 @@ public class TiDBTableGenerator {
     }
 
     private void appendSizeSpecifiers(StringBuilder sb, TiDBDataType type, TiDBGlobalState globalState) {
-        if (type.isNumeric() && Randomly.getBoolean()) {
+        if (!globalState.usesReferenceEngine() && type.isNumeric() && Randomly.getBoolean()) {
             sb.append(" UNSIGNED");
         }
         if (!globalState.usesReferenceEngine() && type.isNumeric() && Randomly.getBoolean()) {

@@ -183,7 +183,7 @@ public class TiDBExpressionGenerator extends UntypedExpressionGenerator<TiDBExpr
     public List<TiDBExpression> generateFetchColumns(boolean shouldCreateDummy) {
         if (shouldCreateDummy && Randomly.getBoolean()) {
             return List.of(new TiDBColumnReference(
-                    new TiDBColumn("*", new TiDBCompositeDataType(TiDBDataType.INT), false, false, false)));
+                    new TiDBColumn("*", new TiDBCompositeDataType(TiDBDataType.INT), false, false, false, false)));
         }
         return Randomly.nonEmptySubset(this.columns).stream().map(c -> new TiDBColumnReference(c))
                 .collect(Collectors.toList());

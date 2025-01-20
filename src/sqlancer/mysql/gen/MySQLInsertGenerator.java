@@ -1,15 +1,12 @@
 package sqlancer.mysql.gen;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import sqlancer.Randomly;
 import sqlancer.common.query.ExpectedErrors;
+import sqlancer.common.query.InsertedValuesLookup;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.mysql.MySQLErrors;
 import sqlancer.mysql.MySQLGlobalState;
@@ -20,37 +17,6 @@ import sqlancer.mysql.ast.MySQLConstant.MySQLNullConstant;
 import sqlancer.mysql.MySQLVisitor;
 
 public class MySQLInsertGenerator {
-
-    private static class InsertedValuesLookup {
-
-        private final Map<String, Map<String, Map<String, Set<String>>>> insertedValues;
-
-        public InsertedValuesLookup() {
-            this.insertedValues = new HashMap<>();
-        }
-
-        public synchronized void insertValue(String database, String table, String column, String value) {
-            Map<String, Map<String, Set<String>>> databaseValues = insertedValues
-                .getOrDefault(database, new HashMap<>());
-            Map<String, Set<String>> tableValues = databaseValues
-                .getOrDefault(table, new HashMap<>());
-            Set<String> columnValues = tableValues
-                .getOrDefault(column, new HashSet<>());
-            columnValues.add(value);
-
-            tableValues.put(column, columnValues);
-            databaseValues.put(table, tableValues);
-            insertedValues.put(database, databaseValues);
-        }
-
-        public synchronized boolean containsValue(String database, String table, String column, String value) {
-            return insertedValues
-                .getOrDefault(database, new HashMap<>())
-                .getOrDefault(table, new HashMap<>())
-                .getOrDefault(column, new HashSet<>())
-                .contains(value);
-        }
-    }
 
     private final MySQLTable table;
     private final StringBuilder sb = new StringBuilder();
