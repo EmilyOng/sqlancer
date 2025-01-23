@@ -2,7 +2,9 @@ package sqlancer.tidb.gen;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import sqlancer.IgnoreMeException;
@@ -23,6 +25,8 @@ public class TiDBTableGenerator {
     private final List<TiDBColumn> columns = new ArrayList<>();
     private boolean primaryKeyAsTableConstraints;
     private final ExpectedErrors errors = new ExpectedErrors();
+
+    protected static final Set<String> candidateDefaultValues = new HashSet<>();
 
     public static SQLQueryAdapter createRandomTableStatement(TiDBGlobalState globalState) throws SQLException {
         if (globalState.getSchema().getDatabaseTables().size() > globalState.getDbmsSpecificOptions().maxNumTables) {
@@ -69,7 +73,7 @@ public class TiDBTableGenerator {
             type = TiDBCompositeDataType.getRandom(globalState);
             appendType(sb, type, globalState);
             sb.append(" ");
-            boolean isGeneratedColumn = Randomly.getBooleanWithRatherLowProbability();
+            boolean isGeneratedColumn = !globalState.usesReferenceEngine() && Randomly.getBooleanWithRatherLowProbability();
             if (isGeneratedColumn) {
                 sb.append(" AS (");
                 sb.append(TiDBVisitor.asString(gen.generateExpression()));
@@ -82,7 +86,7 @@ public class TiDBTableGenerator {
                 errors.add("contains a disallowed function.");
                 errors.add("cannot refer to auto-increment column");
             }
-            if (Randomly.getBooleanWithRatherLowProbability()) {
+            if (!globalState.usesReferenceEngine() && Randomly.getBooleanWithRatherLowProbability()) {
                 sb.append("CHECK (");
                 sb.append(TiDBVisitor.asString(gen.generateExpression()));
                 sb.append(") ");
@@ -90,9 +94,14 @@ public class TiDBTableGenerator {
             if (Randomly.getBooleanWithRatherLowProbability()) {
                 sb.append("NOT NULL ");
             }
+
+            boolean hasDefault = false;
             if (Randomly.getBoolean() && type.getPrimitiveDataType().canHaveDefault() && !isGeneratedColumn) {
+                hasDefault = true;
                 sb.append("DEFAULT ");
-                sb.append(TiDBVisitor.asString(gen.generateConstant(type.getPrimitiveDataType())));
+                String candidateDefault = TiDBVisitor.asString(gen.generateConstant(type.getPrimitiveDataType()));
+                candidateDefaultValues.add(candidateDefault);
+                sb.append(candidateDefault);
                 sb.append(" ");
                 errors.add("Invalid default value");
                 errors.add(
@@ -103,10 +112,10 @@ public class TiDBTableGenerator {
                 sb.append(" AUTO_INCREMENT ");
                 errors.add("there can be only one auto column and it must be defined as a key");
             }
-            if (Randomly.getBooleanWithRatherLowProbability() && canUseAsUnique(type)) {
+            if (!hasDefault && Randomly.getBooleanWithRatherLowProbability() && canUseAsUnique(type)) {
                 sb.append("UNIQUE ");
             }
-            if (Randomly.getBooleanWithRatherLowProbability() && allowPrimaryKey && !primaryKeyAsTableConstraints
+            if (!hasDefault && Randomly.getBooleanWithRatherLowProbability() && allowPrimaryKey && !primaryKeyAsTableConstraints
                     && canUseAsUnique(type) && !isGeneratedColumn) {
                 sb.append("PRIMARY KEY ");
                 allowPrimaryKey = false;
@@ -115,7 +124,9 @@ public class TiDBTableGenerator {
         if (primaryKeyAsTableConstraints) {
             sb.append(", PRIMARY KEY(");
             sb.append(
-                    Randomly.nonEmptySubset(columns).stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
+                    Randomly.nonEmptySubset(columns).stream()
+                        .filter(c -> !c.isNullable())
+                        .map(c -> c.getName()).collect(Collectors.joining(", ")));
             sb.append(")");
             // TODO: do not include blob/text columns here
             errors.add(" used in key specification without a key length");

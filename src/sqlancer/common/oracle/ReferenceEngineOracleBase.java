@@ -2,6 +2,7 @@ package sqlancer.common.oracle;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.sqlengine.dialect.DialectFactory;
 import com.sqlengine.dialect.DialectManager;
@@ -49,6 +50,7 @@ public class ReferenceEngineOracleBase<S extends SQLGlobalState<?, ?>> {
 
     private Executor initializeExecutor() throws Exception {
         Executor executor = new Executor(dialectManager);
+        executor.setIgnoreInsertErrors(true);
 
         StringBuilder statements = new StringBuilder();
         for (Query<?> queryStatement : globalState.getState().getStatements()) {
@@ -102,5 +104,37 @@ public class ReferenceEngineOracleBase<S extends SQLGlobalState<?, ?>> {
         } catch (Exception e) {
             return new ExecutionResult(e, List.of());
         }
+    }
+
+    protected void check(String selectQuery) throws Exception {        
+        String selectStr = selectQuery
+                            // UNKNOWN is unsupported in JSQLParser.
+                            .replaceAll(Pattern.quote("UNKNOWN"), "NULL")
+                            // DISTINCTROW is unsupported in JSQLParser.
+                            .replaceAll(Pattern.quote("DISTINCTROW"), "DISTINCT")
+                            // Standardize conventions.
+                            .replaceAll(Pattern.quote("! "), "NOT ")
+                            .replaceAll(Pattern.quote("||"), "OR")
+                            .replaceAll(Pattern.quote("&&"), "AND");
+
+        ExecutionResult dbmsExecutionResult = runDbmsExecutor(selectStr);
+        ExecutionResult referenceExecutionResult = runReferenceExecutor(selectStr);
+
+        if (dbmsExecutionResult.throwable != null && referenceExecutionResult.throwable == null) {
+            // throw new AssertionError(String.format("MySQL executor reports an exception: %s.", dbmsExecutionResult.throwable));
+            return;
+        }
+        if (dbmsExecutionResult.throwable == null && referenceExecutionResult.throwable != null) {
+            System.out.println(selectStr);
+            throw new AssertionError(String.format("Reference executor reports an exception: %s.", referenceExecutionResult.throwable));
+        }
+
+        ComparatorHelper.assumeResultSetsAreEqual(
+            dbmsExecutionResult.firstColResultSet,
+            referenceExecutionResult.firstColResultSet,
+            selectStr,
+            List.of(selectStr),
+            globalState
+        );
     }
 }

@@ -59,7 +59,7 @@ public class MySQLInsertGenerator {
             sb.append(" ");
             sb.append(Randomly.fromOptions("LOW_PRIORITY", "DELAYED", "HIGH_PRIORITY"));
         }
-        if (Randomly.getBoolean()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBoolean()) {
             sb.append(" IGNORE");
         }
         return generateInto();

@@ -198,7 +198,7 @@ public final class Randomly {
 
     public long getInteger() {
         if (smallBiasProbability()) {
-            return Randomly.fromOptions(-1L, Long.MAX_VALUE, Long.MIN_VALUE, 1L, 0L);
+            return Randomly.fromOptions(-1, Integer.MAX_VALUE, Integer.MIN_VALUE, 1, 0);
         } else {
             if (cacheProbability()) {
                 Long l = getFromLongCache();

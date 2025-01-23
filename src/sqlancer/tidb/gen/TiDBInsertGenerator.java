@@ -52,7 +52,7 @@ public class TiDBInsertGenerator {
             sb.append(" ");
             sb.append(Randomly.fromOptions("LOW_PRIORITY", "HIGH_PRIORITY", "DELAYED"));
         }
-        if (isInsert && Randomly.getBoolean()) {
+        if (!globalState.usesReferenceEngine() && isInsert && Randomly.getBoolean()) {
             sb.append(" IGNORE ");
         }
         sb.append(" INTO ");
@@ -62,7 +62,11 @@ public class TiDBInsertGenerator {
             List<TiDBColumn> columns = table.getColumns();
             insertColumns(sb, columns, table);
         } else {
-            List<TiDBColumn> columnSubset = table.getRandomNonEmptyColumnSubset();
+            List<TiDBColumn> columnSubset = table.getRandomNonEmptyColumnSubset()
+                .stream().filter(column -> column.hasDefault())
+                .collect(Collectors.toList());
+            columnSubset.addAll(table.getColumns().stream().filter(column -> !column.hasDefault()).collect(Collectors.toList()));
+            
             sb.append("(");
             sb.append(columnSubset.stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
             sb.append(") VALUES ");
