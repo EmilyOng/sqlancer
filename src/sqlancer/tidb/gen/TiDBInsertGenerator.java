@@ -95,7 +95,8 @@ public class TiDBInsertGenerator {
             if (column.isPrimaryKey() && expr instanceof TiDBNullConstant) {
                 return false;
             }
-        } else if (!column.isNullable()) {
+        }
+        if (!column.isNullable()) {
             if (expr instanceof TiDBNullConstant) {
                 return false;
             }

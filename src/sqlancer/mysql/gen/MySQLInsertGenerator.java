@@ -78,7 +78,8 @@ public class MySQLInsertGenerator {
             if (column.isPrimaryKey() && expr instanceof MySQLNullConstant) {
                 return false;
             }
-        } else if (column.isNotNull()) {
+        }
+        if (column.isNotNull()) {
             if (expr instanceof MySQLNullConstant) {
                 return false;
             }

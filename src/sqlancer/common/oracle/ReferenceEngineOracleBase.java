@@ -91,13 +91,8 @@ public class ReferenceEngineOracleBase<S extends SQLGlobalState<?, ?>> {
             Table resultTable = this.executor.execute(selectStr);
             List<String> firstColResultSet = new ArrayList<>();
             for (Row row : resultTable.getTableRows()) {
-                String result = row.at(0).getValue().getStringValue();
-                if (result.equalsIgnoreCase("null")) {
-                    // SQLancer treats "null" result values as literal nulls.
-                    firstColResultSet.add(null);
-                } else {
-                    firstColResultSet.add(result);
-                }
+                String result = row.at(0).getValue().getLiteral();
+                firstColResultSet.add(result);
             }
 
             return new ExecutionResult(null, firstColResultSet);
