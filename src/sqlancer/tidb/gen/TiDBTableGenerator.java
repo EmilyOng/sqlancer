@@ -125,7 +125,7 @@ public class TiDBTableGenerator {
             sb.append(", PRIMARY KEY(");
             sb.append(
                     Randomly.nonEmptySubset(columns).stream()
-                        .filter(c -> !c.isNullable())
+                        .filter(c -> !c.isNullable() && !c.hasDefault())
                         .map(c -> c.getName()).collect(Collectors.joining(", ")));
             sb.append(")");
             // TODO: do not include blob/text columns here
