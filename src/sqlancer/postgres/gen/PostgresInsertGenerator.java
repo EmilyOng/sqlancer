@@ -41,7 +41,7 @@ public final class PostgresInsertGenerator {
         sb.append("(");
         sb.append(columns.stream().map(c -> c.getName()).collect(Collectors.joining(", ")));
         sb.append(")");
-        if (Randomly.getBooleanWithRatherLowProbability()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBooleanWithRatherLowProbability()) {
             sb.append(" OVERRIDING");
             sb.append(" ");
             sb.append(Randomly.fromOptions("SYSTEM", "USER"));
@@ -77,7 +77,7 @@ public final class PostgresInsertGenerator {
                 insertRow(globalState, sb, columns, n == 1);
             }
         }
-        if (Randomly.getBooleanWithRatherLowProbability()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBooleanWithRatherLowProbability()) {
             sb.append(" ON CONFLICT ");
             if (Randomly.getBoolean()) {
                 sb.append("(");

@@ -19,6 +19,7 @@ import sqlancer.postgres.oracle.PostgresFuzzer;
 import sqlancer.postgres.oracle.PostgresPivotedQuerySynthesisOracle;
 import sqlancer.postgres.oracle.tlp.PostgresTLPAggregateOracle;
 import sqlancer.postgres.oracle.tlp.PostgresTLPHavingOracle;
+import sqlancer.postgres.oracle.PostgresReferenceEngineOracle;
 
 public enum PostgresOracleFactory implements OracleFactory<PostgresGlobalState> {
     NOREC {
@@ -111,7 +112,12 @@ public enum PostgresOracleFactory implements OracleFactory<PostgresGlobalState> 
         public TestOracle<PostgresGlobalState> create(PostgresGlobalState globalState) throws Exception {
             return new PostgresFuzzer(globalState);
         }
-
+    },
+    REFERENCE_ENGINE {
+        @Override
+        public TestOracle<PostgresGlobalState> create(PostgresGlobalState globalState) throws Exception {
+            return new PostgresReferenceEngineOracle(globalState);
+        }
     };
 
 }

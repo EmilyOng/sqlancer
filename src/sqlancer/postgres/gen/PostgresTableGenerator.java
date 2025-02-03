@@ -67,11 +67,11 @@ public class PostgresTableGenerator {
     protected SQLQueryAdapter generate() {
         columnCanHavePrimaryKey = true;
         sb.append("CREATE");
-        if (Randomly.getBoolean()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBoolean()) {
             sb.append(" ");
             isTemporaryTable = true;
             sb.append(Randomly.fromOptions("TEMPORARY", "TEMP"));
-        } else if (Randomly.getBoolean()) {
+        } else if (!globalState.usesReferenceEngine() && Randomly.getBoolean()) {
             sb.append(" UNLOGGED");
         }
         sb.append(" TABLE");
@@ -80,7 +80,7 @@ public class PostgresTableGenerator {
         }
         sb.append(" ");
         sb.append(tableName);
-        if (Randomly.getBoolean() && !newSchema.getDatabaseTables().isEmpty()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBoolean() && !newSchema.getDatabaseTables().isEmpty()) {
             createLike();
         } else {
             createStandard();
@@ -97,7 +97,7 @@ public class PostgresTableGenerator {
             String name = DBMSCommon.createColumnName(i);
             createColumn(name);
         }
-        if (Randomly.getBoolean()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBoolean()) {
             errors.add("constraints on temporary tables may reference only temporary tables");
             errors.add("constraints on unlogged tables may reference only permanent or unlogged tables");
             errors.add("constraints on permanent tables may reference only permanent tables");
@@ -110,16 +110,18 @@ public class PostgresTableGenerator {
             PostgresCommon.addTableConstraints(columnHasPrimaryKey, sb, table, globalState, errors);
         }
         sb.append(")");
-        generateInherits();
-        generatePartitionBy();
-        generateUsing();
-        if (!isPartitionedTable) {
-            PostgresCommon.generateWith(sb, globalState, errors);
-        }
-        if (Randomly.getBoolean() && isTemporaryTable) {
-            sb.append(" ON COMMIT ");
-            sb.append(Randomly.fromOptions("PRESERVE ROWS", "DELETE ROWS", "DROP"));
-            sb.append(" ");
+        if (!globalState.usesReferenceEngine()) {
+            generateInherits();
+            generatePartitionBy();
+            generateUsing();
+            if (!isPartitionedTable) {
+                PostgresCommon.generateWith(sb, globalState, errors);
+            }
+            if (Randomly.getBoolean() && isTemporaryTable) {
+                sb.append(" ON COMMIT ");
+                sb.append(Randomly.fromOptions("PRESERVE ROWS", "DELETE ROWS", "DROP"));
+                sb.append(" ");
+            }
         }
     }
 
@@ -143,8 +145,10 @@ public class PostgresTableGenerator {
     private void createColumn(String name) throws AssertionError {
         sb.append(name);
         sb.append(" ");
-        PostgresDataType type = PostgresDataType.getRandomType();
-        boolean serial = PostgresCommon.appendDataType(type, sb, true, generateOnlyKnown, globalState.getCollates());
+        PostgresDataType type = globalState.usesReferenceEngine()
+            ? PostgresDataType.getRandomTypeForReferenceEngine()
+            : PostgresDataType.getRandomType();
+        boolean serial = PostgresCommon.appendDataType(type, sb, !globalState.usesReferenceEngine(), generateOnlyKnown, globalState.getCollates());
         PostgresColumn c = new PostgresColumn(name, type);
         c.setTable(table);
         columnsToBeAdded.add(c);
@@ -229,6 +233,10 @@ public class PostgresTableGenerator {
 
     private void createColumnConstraint(PostgresDataType type, boolean serial) {
         List<ColumnConstraint> constraintSubset = Randomly.nonEmptySubset(ColumnConstraint.values());
+        if (globalState.usesReferenceEngine()) {
+            constraintSubset.remove(ColumnConstraint.CHECK);
+            constraintSubset.remove(ColumnConstraint.GENERATED);
+        }
         if (Randomly.getBoolean()) {
             // make checks constraints less likely
             constraintSubset.remove(ColumnConstraint.CHECK);

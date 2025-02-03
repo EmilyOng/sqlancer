@@ -128,6 +128,10 @@ public class PostgresProvider extends SQLProviderAdapter<PostgresGlobalState, Po
         public SQLQueryAdapter getQuery(PostgresGlobalState state) throws Exception {
             return sqlQueryProvider.getQuery(state);
         }
+
+        public static Action[] valuesReferenceEngine() {
+            return new Action[] { INSERT, CREATE_INDEX };
+        }
     }
 
     protected static int mapActions(PostgresGlobalState globalState, Action a) {
@@ -310,15 +314,20 @@ public class PostgresProvider extends SQLProviderAdapter<PostgresGlobalState, Po
     }
 
     protected void prepareTables(PostgresGlobalState globalState) throws Exception {
-        StatementExecutor<PostgresGlobalState, Action> se = new StatementExecutor<>(globalState, Action.values(),
+        Action[] values = globalState.usesReferenceEngine()
+            ? Action.valuesReferenceEngine()
+            : Action.values();
+        StatementExecutor<PostgresGlobalState, Action> se = new StatementExecutor<>(globalState, values,
                 PostgresProvider::mapActions, (q) -> {
                     if (globalState.getSchema().getDatabaseTables().isEmpty()) {
                         throw new IgnoreMeException();
                     }
                 });
         se.executeStatements();
-        globalState.executeStatement(new SQLQueryAdapter("COMMIT", true));
-        globalState.executeStatement(new SQLQueryAdapter("SET SESSION statement_timeout = 5000;\n"));
+        if (!globalState.usesReferenceEngine()) {
+            globalState.executeStatement(new SQLQueryAdapter("COMMIT", true));
+            globalState.executeStatement(new SQLQueryAdapter("SET SESSION statement_timeout = 5000;\n"));
+        }
     }
 
     private String getCreateDatabaseCommand(PostgresGlobalState state) {

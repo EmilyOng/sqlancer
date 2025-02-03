@@ -3,6 +3,7 @@ package sqlancer.postgres.ast;
 import sqlancer.Randomly;
 import sqlancer.common.ast.BinaryOperatorNode;
 import sqlancer.common.ast.BinaryOperatorNode.Operator;
+import sqlancer.postgres.PostgresGlobalState;
 import sqlancer.postgres.PostgresSchema.PostgresDataType;
 import sqlancer.postgres.ast.PostgresBinaryComparisonOperation.PostgresBinaryComparisonOperator;
 
@@ -110,7 +111,10 @@ public class PostgresBinaryComparisonOperation
 
         public abstract PostgresConstant getExpectedValue(PostgresConstant leftVal, PostgresConstant rightVal);
 
-        public static PostgresBinaryComparisonOperator getRandom() {
+        public static PostgresBinaryComparisonOperator getRandom(PostgresGlobalState globalState) {
+            if (globalState.usesReferenceEngine()) {
+                return Randomly.fromOptions(EQUALS, NOT_EQUALS, LESS, LESS_EQUALS, GREATER, GREATER_EQUALS);
+            }
             return Randomly.fromOptions(PostgresBinaryComparisonOperator.values());
         }
 

@@ -81,9 +81,9 @@ public final class PostgresToStringVisitor extends ToStringVisitor<PostgresExpre
             sb.append("ONLY ");
         }
         sb.append(from.getTable().getName());
-        if (!from.isOnly() && Randomly.getBoolean()) {
-            sb.append("*");
-        }
+        // if (!from.isOnly() && Randomly.getBoolean()) {
+        //     sb.append("*");
+        // }
     }
 
     @Override

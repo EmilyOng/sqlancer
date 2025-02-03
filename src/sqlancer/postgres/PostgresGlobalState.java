@@ -150,4 +150,8 @@ public class PostgresGlobalState extends SQLGlobalState<PostgresOptions, Postgre
         return this.allowedFunctionTypes;
     }
 
+    public boolean usesReferenceEngine() {
+        return getDbmsSpecificOptions().oracle.stream().anyMatch(o -> o == PostgresOracleFactory.REFERENCE_ENGINE);
+    }
+
 }
