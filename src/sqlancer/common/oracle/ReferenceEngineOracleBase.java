@@ -61,7 +61,8 @@ public class ReferenceEngineOracleBase<S extends SQLGlobalState<?, ?>> {
                 queryStatementStr.startsWith("USE") ||
                 queryStatementStr.startsWith("CREATE INDEX") ||
                 queryStatementStr.startsWith("CREATE UNIQUE INDEX") ||
-                queryStatementStr.startsWith("DROP INDEX")
+                queryStatementStr.startsWith("DROP INDEX") ||
+                queryStatementStr.startsWith("\\c")
             ) {
                 // Ignore database statements.
                 continue;
@@ -106,17 +107,13 @@ public class ReferenceEngineOracleBase<S extends SQLGlobalState<?, ?>> {
                             // UNKNOWN is unsupported in JSQLParser.
                             .replaceAll(Pattern.quote("UNKNOWN"), "NULL")
                             // DISTINCTROW is unsupported in JSQLParser.
-                            .replaceAll(Pattern.quote("DISTINCTROW"), "DISTINCT")
-                            // Standardize conventions.
-                            .replaceAll(Pattern.quote("! "), "NOT ")
-                            .replaceAll(Pattern.quote("||"), "OR")
-                            .replaceAll(Pattern.quote("&&"), "AND");
+                            .replaceAll(Pattern.quote("DISTINCTROW"), "DISTINCT");
 
         ExecutionResult dbmsExecutionResult = runDbmsExecutor(selectStr);
         ExecutionResult referenceExecutionResult = runReferenceExecutor(selectStr);
 
         if (dbmsExecutionResult.throwable != null && referenceExecutionResult.throwable == null) {
-            // throw new AssertionError(String.format("MySQL executor reports an exception: %s.", dbmsExecutionResult.throwable));
+            // For now, ignore execution errors in the DBMS.
             return;
         }
         if (dbmsExecutionResult.throwable == null && referenceExecutionResult.throwable != null) {

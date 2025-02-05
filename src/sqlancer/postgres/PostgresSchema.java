@@ -33,8 +33,12 @@ public class PostgresSchema extends AbstractSchema<PostgresGlobalState, Postgres
     public enum PostgresDataType {
         INT, BOOLEAN, TEXT, DECIMAL, FLOAT, REAL, RANGE, MONEY, BIT, INET;
 
+        public static PostgresDataType[] getTypesForReferenceEngine() {
+            return new PostgresDataType[] { INT, BOOLEAN };
+        }
+
         public static PostgresDataType getRandomTypeForReferenceEngine() {
-            return Randomly.fromOptions(INT, BOOLEAN);
+            return Randomly.fromOptions(PostgresDataType.getTypesForReferenceEngine());
         }
 
         public static PostgresDataType getRandomType() {

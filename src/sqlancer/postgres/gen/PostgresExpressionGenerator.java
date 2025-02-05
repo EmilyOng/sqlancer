@@ -192,8 +192,19 @@ public class PostgresExpressionGenerator implements ExpressionGenerator<Postgres
         switch (option) {
         case POSTFIX_OPERATOR:
             PostfixOperator random = PostfixOperator.getRandom();
+            PostgresDataType inputType = Randomly.fromOptions(random.getInputDataTypes());
+            boolean isSupportedType = false;
+            for (PostgresDataType type : PostgresDataType.getTypesForReferenceEngine()) {
+                if (inputType == type) {
+                    isSupportedType = true;
+                    break;
+                }
+            }
+            if (!isSupportedType) {
+                inputType = PostgresDataType.getRandomTypeForReferenceEngine();
+            }
             return PostgresPostfixOperation
-                    .create(generateExpression(depth + 1, Randomly.fromOptions(random.getInputDataTypes())), random);
+                    .create(generateExpression(depth + 1, inputType), random);
         case IN_OPERATION:
             return inOperation(depth + 1);
         case NOT:
@@ -528,7 +539,7 @@ public class PostgresExpressionGenerator implements ExpressionGenerator<Postgres
         // }
         switch (type) {
         case INT:
-            return PostgresConstant.createIntConstant(r.getInteger());
+            return PostgresConstant.createIntConstant(Randomly.fromOptions(-1, Integer.MAX_VALUE, Integer.MIN_VALUE, 1, 0));
         case BOOLEAN:
             return PostgresConstant.createBooleanConstant(Randomly.getBoolean());
         case TEXT:

@@ -184,11 +184,11 @@ public class MySQLToStringVisitor extends ToStringVisitor<MySQLExpression> imple
     public void visit(MySQLBinaryLogicalOperation op) {
         sb.append("(");
         visit(op.getLeft());
-        // sb.append(")");
+        sb.append(")");
         sb.append(" ");
         sb.append(op.getTextRepresentation());
         sb.append(" ");
-        // sb.append("(");
+        sb.append("(");
         visit(op.getRight());
         sb.append(")");
     }
