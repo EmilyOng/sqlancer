@@ -619,6 +619,14 @@ public class PostgresExpressionGenerator implements ExpressionGenerator<Postgres
 
     private PostgresExpression getAggregate(PostgresDataType dataType) {
         List<PostgresAggregateFunction> aggregates = PostgresAggregateFunction.getAggregates(dataType);
+        if (globalState.usesReferenceEngine()) {
+            aggregates.remove(PostgresAggregateFunction.AVG);
+            aggregates.remove(PostgresAggregateFunction.BIT_AND);
+            aggregates.remove(PostgresAggregateFunction.BIT_OR);
+            aggregates.remove(PostgresAggregateFunction.BOOL_AND);
+            aggregates.remove(PostgresAggregateFunction.BOOL_OR);
+            aggregates.remove(PostgresAggregateFunction.EVERY);
+        }
         PostgresAggregateFunction agg = Randomly.fromList(aggregates);
         return generateArgsForAggregate(dataType, agg);
     }
