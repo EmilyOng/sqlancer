@@ -52,9 +52,9 @@ public class CockroachDBTableGenerator extends CockroachDBGenerator {
         sb.append(tableName);
         for (int i = 0; i < Randomly.smallNumber() + 1; i++) {
             String columnName = "c" + i;
-            CockroachDBCompositeDataType columnType = CockroachDBCompositeDataType.getRandom();
+            CockroachDBCompositeDataType columnType = CockroachDBCompositeDataType.getRandom(globalState);
             while (columnType.getPrimitiveDataType() == CockroachDBDataType.JSONB) {
-                columnType = CockroachDBCompositeDataType.getRandom(); // TODO
+                columnType = CockroachDBCompositeDataType.getRandom(globalState); // TODO
             }
             columns.add(new CockroachDBColumn(columnName, columnType, false, false));
 

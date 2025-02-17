@@ -23,6 +23,10 @@ public class CockroachDBSchema extends AbstractSchema<CockroachDBGlobalState, Co
         INT, BOOL, STRING, FLOAT, BYTES, BIT, VARBIT, SERIAL, INTERVAL, TIMESTAMP, TIMESTAMPTZ, DECIMAL, JSONB, TIME,
         TIMETZ, ARRAY;
 
+        public static CockroachDBDataType[] getSupportedTypesForReferenceEngine() {
+            return new CockroachDBDataType[] { INT, BOOL };
+        }
+        
         public static CockroachDBDataType getRandom() {
             return Randomly.fromOptions(values());
         }
@@ -128,8 +132,10 @@ public class CockroachDBSchema extends AbstractSchema<CockroachDBGlobalState, Co
             }
         }
 
-        public static CockroachDBCompositeDataType getRandom() {
-            CockroachDBDataType randomDataType = CockroachDBDataType.getRandom();
+        public static CockroachDBCompositeDataType getRandom(CockroachDBGlobalState globalState) {
+            CockroachDBDataType randomDataType = globalState.usesReferenceEngine()
+                ? Randomly.fromOptions(CockroachDBDataType.getSupportedTypesForReferenceEngine())
+                : CockroachDBDataType.getRandom();
             return getRandomForType(randomDataType);
         }
 

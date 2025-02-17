@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import sqlancer.Randomly;
+import sqlancer.cockroachdb.CockroachDBProvider;
 import sqlancer.cockroachdb.CockroachDBSchema.CockroachDBDataType;
 
 public class CockroachDBAggregate implements CockroachDBExpression {
@@ -68,8 +69,12 @@ public class CockroachDBAggregate implements CockroachDBExpression {
                     || supportedReturnTypes.length == 0;
         }
 
-        public static List<CockroachDBAggregateFunction> getAggregates(CockroachDBDataType type) {
-            return Arrays.asList(values()).stream().filter(p -> p.supportsReturnType(type))
+        public static List<CockroachDBAggregateFunction> getAggregates(CockroachDBDataType type, CockroachDBProvider.CockroachDBGlobalState globalState) {
+            return Arrays.asList(values()).stream()
+                    .filter(p ->
+                        p.supportsReturnType(type) &&
+                        (!globalState.usesReferenceEngine() || (p == SUM || p == SUM_INT || p == MIN || p == MAX || p == COUNT_ROWS || p == COUNT))
+                    )
                     .collect(Collectors.toList());
         }
 

@@ -1,6 +1,7 @@
 package sqlancer.cockroachdb.ast;
 
 import sqlancer.Randomly;
+import sqlancer.cockroachdb.CockroachDBProvider.CockroachDBGlobalState;
 import sqlancer.cockroachdb.ast.CockroachDBBinaryComparisonOperator.CockroachDBComparisonOperator;
 import sqlancer.common.ast.BinaryOperatorNode;
 import sqlancer.common.ast.BinaryOperatorNode.Operator;
@@ -18,7 +19,10 @@ public class CockroachDBBinaryComparisonOperator extends
             this.textRepr = textRepr;
         }
 
-        public static CockroachDBComparisonOperator getRandom() {
+        public static CockroachDBComparisonOperator getRandom(CockroachDBGlobalState globalState) {
+            if (globalState.usesReferenceEngine()) {
+                return Randomly.fromOptions(EQUALS, GREATER, GREATER_EQUALS, SMALLER, SMALLER_EQUALS, NOT_EQUALS);
+            }
             return Randomly.fromOptions(CockroachDBComparisonOperator.values());
         }
 

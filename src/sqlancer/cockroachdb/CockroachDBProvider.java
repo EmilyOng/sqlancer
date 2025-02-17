@@ -114,6 +114,10 @@ public class CockroachDBProvider extends SQLProviderAdapter<CockroachDBGlobalSta
         public SQLQueryAdapter getQuery(CockroachDBGlobalState state) throws Exception {
             return sqlQueryProvider.getQuery(state);
         }
+
+        public static Action[] valuesReferenceEngine() {
+            return new Action[] { INSERT, CREATE_INDEX };
+        }        
     }
 
     public static class CockroachDBGlobalState extends SQLGlobalState<CockroachDBOptions, CockroachDBSchema> {
@@ -168,11 +172,14 @@ public class CockroachDBProvider extends SQLProviderAdapter<CockroachDBGlobalSta
             } while (!success);
         }
 
-        int[] nrRemaining = new int[Action.values().length];
+        Action[] values = globalState.usesReferenceEngine()
+            ? Action.valuesReferenceEngine()
+            : Action.values();
+        int[] nrRemaining = new int[values.length];
         List<Action> actions = new ArrayList<>();
         int total = 0;
-        for (int i = 0; i < Action.values().length; i++) {
-            Action action = Action.values()[i];
+        for (int i = 0; i < values.length; i++) {
+            Action action = values[i];
             int nrPerformed = 0;
             switch (action) {
             case INSERT:
@@ -230,7 +237,7 @@ public class CockroachDBProvider extends SQLProviderAdapter<CockroachDBGlobalSta
             int previousRange = 0;
             for (int i = 0; i < nrRemaining.length; i++) {
                 if (previousRange <= selection && selection < previousRange + nrRemaining[i]) {
-                    nextAction = Action.values()[i];
+                    nextAction = values[i];
                     break;
                 } else {
                     previousRange += nrRemaining[i];

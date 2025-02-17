@@ -3,19 +3,19 @@ package sqlancer.cockroachdb.oracle;
 import com.sqlengine.dialect.DialectType;
 
 import sqlancer.Randomly;
-import sqlancer.cockroachdb.CockroachDBProvider;
+import sqlancer.cockroachdb.CockroachDBProvider.CockroachDBGlobalState;
 import sqlancer.cockroachdb.ast.CockroachDBSelect;
 import sqlancer.cockroachdb.gen.CockroachDBRandomQuerySynthesizer;
 import sqlancer.common.oracle.ReferenceEngineOracleBase;
 import sqlancer.common.oracle.TestOracle;
 
 public class CockroachDBReferenceEngineOracle
-    extends ReferenceEngineOracleBase<CockroachDBProvider.CockroachDBGlobalState>
-    implements TestOracle<CockroachDBProvider.CockroachDBGlobalState> {
+    extends ReferenceEngineOracleBase<CockroachDBGlobalState>
+    implements TestOracle<CockroachDBGlobalState> {
     
-    private final CockroachDBProvider.CockroachDBGlobalState globalState;
+    private final CockroachDBGlobalState globalState;
 
-    public CockroachDBReferenceEngineOracle(CockroachDBProvider.CockroachDBGlobalState globalState) {
+    public CockroachDBReferenceEngineOracle(CockroachDBGlobalState globalState) {
         super(globalState, DialectType.COCKROACHDB);
         this.globalState = globalState;
     }
