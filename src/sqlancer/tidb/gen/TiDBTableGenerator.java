@@ -121,7 +121,7 @@ public class TiDBTableGenerator {
                 allowPrimaryKey = false;
             }
         }
-        if (primaryKeyAsTableConstraints) {
+        if (!globalState.usesReferenceEngine() && primaryKeyAsTableConstraints) {
             sb.append(", PRIMARY KEY(");
             sb.append(
                     Randomly.nonEmptySubset(columns).stream()

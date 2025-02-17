@@ -78,7 +78,7 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
         }
 
         public static Action[] valuesReferenceEngine() {
-            return new Action[] { INSERT, CREATE_INDEX, DROP_INDEX };
+            return new Action[] { INSERT, CREATE_INDEX };
         }
     }
 

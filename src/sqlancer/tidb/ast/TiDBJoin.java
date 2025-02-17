@@ -24,7 +24,7 @@ public class TiDBJoin implements TiDBExpression, Join<TiDBExpression, TiDBTable,
 
         public static JoinType getRandom(TiDBGlobalState globalState) {
             if (globalState.usesReferenceEngine()) {
-                return Randomly.fromOptions(INNER, LEFT, RIGHT, CROSS);
+                return Randomly.fromOptions(INNER, CROSS);
             } else {
                 return Randomly.fromOptions(values());
             }

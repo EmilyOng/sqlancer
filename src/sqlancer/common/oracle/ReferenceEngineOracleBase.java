@@ -50,17 +50,18 @@ public class ReferenceEngineOracleBase<S extends SQLGlobalState<?, ?>> {
 
     private Executor initializeExecutor() throws Exception {
         Executor executor = new Executor(dialectManager);
-        executor.setIgnoreInsertErrors(true);
+        executor.setIgnoreErrors(true);
 
         StringBuilder statements = new StringBuilder();
         for (Query<?> queryStatement : globalState.getState().getStatements()) {
-            String queryStatementStr = queryStatement.toString();
+            String queryStatementStr = queryStatement.toString()
+                // UNKNOWN is unsupported in JSQLParser.
+                .replaceAll(Pattern.quote("UNKNOWN"), "NULL");
             if (
                 queryStatementStr.startsWith("DROP DATABASE") ||
                 queryStatementStr.startsWith("CREATE DATABASE") ||
                 queryStatementStr.startsWith("USE") ||
                 queryStatementStr.startsWith("CREATE INDEX") ||
-                queryStatementStr.startsWith("CREATE UNIQUE INDEX") ||
                 queryStatementStr.startsWith("DROP INDEX") ||
                 queryStatementStr.startsWith("\\c")
             ) {

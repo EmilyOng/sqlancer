@@ -130,7 +130,7 @@ public class PostgresProvider extends SQLProviderAdapter<PostgresGlobalState, Po
         }
 
         public static Action[] valuesReferenceEngine() {
-            return new Action[] { INSERT, CREATE_INDEX };
+            return new Action[] { INSERT };
         }
     }
 

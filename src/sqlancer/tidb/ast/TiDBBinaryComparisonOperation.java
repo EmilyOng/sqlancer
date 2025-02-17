@@ -24,7 +24,7 @@ public class TiDBBinaryComparisonOperation extends BinaryOperatorNode<TiDBExpres
         }
 
         public static TiDBComparisonOperator getRandom() {
-            return Randomly.fromOptions(TiDBComparisonOperator.values());
+            return Randomly.fromOptions(EQUALS, GREATER, GREATER_EQUALS, SMALLER, SMALLER_EQUALS, NOT_EQUALS);
         }
 
         @Override

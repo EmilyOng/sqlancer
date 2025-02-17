@@ -153,7 +153,7 @@ public class PostgresTableGenerator {
         c.setTable(table);
         columnsToBeAdded.add(c);
         sb.append(" ");
-        if (Randomly.getBoolean()) {
+        if (!globalState.usesReferenceEngine() && Randomly.getBoolean()) {
             createColumnConstraint(type, serial);
         }
     }
