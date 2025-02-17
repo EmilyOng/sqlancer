@@ -123,6 +123,11 @@ public class CockroachDBProvider extends SQLProviderAdapter<CockroachDBGlobalSta
             return CockroachDBSchema.fromConnection(getConnection(), getDatabaseName());
         }
 
+        public boolean usesReferenceEngine() {
+            return getDbmsSpecificOptions().oracle == CockroachDBOracleFactory.REFERENCE_ENGINE;
+        }
+
+
     }
 
     @Override
